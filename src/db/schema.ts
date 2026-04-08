@@ -39,3 +39,32 @@ export const syncLogs = sqliteTable("sync_logs", {
   lastSync: integer("last_sync", { mode: "timestamp" }).notNull(),
   status: text("status").notNull(), // 'success', 'failed'
 });
+
+export const tindakan = sqliteTable("tindakan", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kodeCdi: text("kode_cdi").notNull().unique(),
+  name: text("name").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+});
+
+export const diagnosa = sqliteTable("diagnosa", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kodeCdi: text("kode_cdi").notNull().unique(),
+  name: text("name").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+});
+
+export const bpjs = sqliteTable("bpjs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kodeBpjs: text("kode_bpjs").notNull().unique(),
+  tindakanId: integer("tindakan_id").references(() => tindakan.id),
+  diagnosaId: integer("diagnosa_id").references(() => diagnosa.id),
+  tariff: real("tariff").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+});
