@@ -1,5 +1,6 @@
 import styles from "./page.module.css";
 import "./globals.css";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -45,12 +46,14 @@ export default function Home() {
         </div>
 
         <div className="actions flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="/api/sync/get"
+          <Link
+            href="/status"
             className="btn btn-primary"
+            style={{ gap: '0.75rem' }}
           >
+            <span className="status-dot"></span>
             Check API Status
-          </a>
+          </Link>
           <div className="btn btn-outline">
             v1.0.0 Stable
           </div>

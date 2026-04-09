@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { icd10, icd9, tariffs, tindakan, diagnosa, bpjs } from "@/db/schema";
+import { validateApiKey } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    // Validate API Key
+    const auth = await validateApiKey(req);
+    if (!auth.isValid) {
+      return NextResponse.json({ success: false, message: auth.message }, { status: 401 });
+    }
+
     const {
       icd10: icd10Data,
       icd9: icd9Data,

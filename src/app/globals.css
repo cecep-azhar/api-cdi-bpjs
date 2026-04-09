@@ -1,8 +1,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #0ea5e9;
-  --primary-hover: #0284c7;
+  --primary: #0f172a;
+  --primary-hover: #1e293b;
   --secondary: #64748b;
   --accent: #f43f5e;
   --border: #e2e8f0;
@@ -15,8 +15,8 @@
   :root {
     --background: #0f172a;
     --foreground: #f8fafc;
-    --primary: #38bdf8;
-    --primary-hover: #7dd3fc;
+    --primary: #1e293b;
+    --primary-hover: #334155;
     --secondary: #94a3b8;
     --accent: #fb7185;
     --border: #1e293b;
@@ -115,32 +115,6 @@ body {
   letter-spacing: 0.1em;
 }
 
-.btn {
-  padding: 0.75rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  transition: all 0.2s;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-primary {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
-}
-
-.btn-outline {
-  border: 1px solid var(--border);
-  color: var(--secondary);
-}
 
 .icon-container {
   display: inline-block;
@@ -164,4 +138,19 @@ body {
   .flex-col-sm {
     flex-direction: column;
   }
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse-simple 2s infinite;
+}
+
+@keyframes pulse-simple {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 12px #22c55e; }
+  100% { transform: scale(0.95); opacity: 0.8; }
 }

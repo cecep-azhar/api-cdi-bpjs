@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { icd10, icd9, tariffs, tindakan, diagnosa, bpjs } from "@/db/schema";
 import { gt } from "drizzle-orm";
+import { validateApiKey } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
   try {
+    // Validate API Key
+    const auth = await validateApiKey(req);
+    if (!auth.isValid) {
+      return NextResponse.json({ success: false, message: auth.message }, { status: 401 });
+    }
+
     const searchParams = req.nextUrl.searchParams;
     const lastSync = searchParams.get("last_sync");
     const timestamp = lastSync ? new Date(parseInt(lastSync)) : new Date(0);

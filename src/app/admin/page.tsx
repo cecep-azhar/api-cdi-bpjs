@@ -85,34 +85,37 @@ export default async function AdminDashboard() {
       <div className="stats-grid">
         {stats.map((s) => (
           <Link href={s.href} key={s.label} className="stat-card" style={{ textDecoration: "none" }}>
-            <div className="stat-icon" style={{ background: `${s.color}22`, color: s.color }}>
-              {s.icon}
+            <div className="stat-header">
+              <div className="stat-label">Total {s.label}</div>
+              <div className="stat-icon" style={{ color: '#64748b' }}>
+                {s.icon}
+              </div>
             </div>
             <div className="stat-value">{s.value.toLocaleString()}</div>
-            <div className="stat-label">{s.label}</div>
+            <div className="stat-desc">Jumlah {s.label.toLowerCase()} terdaftar</div>
           </Link>
         ))}
       </div>
 
       <div className="admin-card">
-        <h2 style={{ color: "#e6edf3", fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>
+        <h2 style={{ color: "#0f172a", fontSize: "1.1rem", fontWeight: 700, marginBottom: "1rem" }}>
           Aksi Cepat
         </h2>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <Link href="/admin/tindakan" className="btn btn-primary">
             + Tambah Tindakan
           </Link>
-          <Link href="/admin/diagnosa" className="btn btn-primary" style={{ background: "linear-gradient(135deg, #8b5cf6, #a855f7)" }}>
+          <Link href="/admin/diagnosa" className="btn btn-primary">
             + Tambah Diagnosa
           </Link>
-          <Link href="/admin/bpjs" className="btn btn-primary" style={{ background: "linear-gradient(135deg, #0891b2, #06b6d4)" }}>
+          <Link href="/admin/bpjs" className="btn btn-primary">
             + Tambah BPJS
           </Link>
         </div>
       </div>
 
-      <div className="admin-card">
-        <h2 style={{ color: "#e6edf3", fontSize: "1rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+      <div className="admin-card" style={{ marginBottom: "0" }}>
+        <h2 style={{ color: "#0f172a", fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.75rem" }}>
           Endpoint Sinkronisasi
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -123,9 +126,9 @@ export default async function AdminDashboard() {
             <div key={ep.path} style={{
               display: "flex", gap: "1rem", alignItems: "center",
               padding: "0.75rem 1rem",
-              background: "rgba(255,255,255,0.03)",
-              borderRadius: "10px",
-              border: "1px solid rgba(255,255,255,0.05)",
+              background: "#f8fafc",
+              borderRadius: "8px",
+              border: "1px solid #e2e8f0",
             }}>
               <span style={{
                 padding: "0.2rem 0.6rem",
@@ -133,17 +136,21 @@ export default async function AdminDashboard() {
                 fontSize: "0.7rem",
                 fontWeight: 700,
                 background: ep.method === "GET" ? "rgba(34, 197, 94, 0.12)" : "rgba(99, 102, 241, 0.12)",
-                color: ep.method === "GET" ? "#4ade80" : "#818cf8",
+                color: ep.method === "GET" ? "#16a34a" : "#4f46e5",
                 border: ep.method === "GET" ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(99,102,241,0.2)",
                 flexShrink: 0,
               }}>
                 {ep.method}
               </span>
-              <code style={{ color: "#7dd3fc", fontSize: "0.8rem", flex: 1, wordBreak: "break-all" }}>{ep.path}</code>
-              <span style={{ color: "rgba(230,237,243,0.4)", fontSize: "0.8rem", flexShrink: 0 }}>{ep.desc}</span>
+              <code style={{ color: "#0ea5e9", fontSize: "0.85rem", fontWeight: 500, flex: 1, wordBreak: "break-all" }}>{ep.path}</code>
+              <span style={{ color: "#64748b", fontSize: "0.8rem", flexShrink: 0 }}>{ep.desc}</span>
             </div>
           ))}
         </div>
+      </div>
+      
+      <div style={{ textAlign: "center", padding: "2rem", color: "#94a3b8", fontSize: "0.85rem" }}>
+        Development by Software Engineering RND 2026
       </div>
     </div>
   );

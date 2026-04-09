@@ -6,12 +6,34 @@ import { eq } from "drizzle-orm";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    await db.insert(tindakan).values({
-      kodeCdi: body.kodeCdi,
-      name: body.name,
-      isActive: body.isActive ?? true,
-    });
-    return NextResponse.json({ success: true });
+    
+    if (Array.isArray(body)) {
+      // Batch Import from CSV
+      if (body.length === 0) return NextResponse.json({ success: true, message: "Tidak ada data" });
+      
+      const values = body.map((item: any) => ({
+        kodeCdi: item.kodeCdi,
+        name: item.name,
+        isActive: item.isActive ?? true,
+      }));
+
+      // Menggunakan upsert (onConflictDoUpdate) agar tidak error saat kode sama
+      for(const val of values) {
+         await db.insert(tindakan).values(val).onConflictDoUpdate({
+           target: tindakan.kodeCdi,
+           set: { name: val.name, isActive: val.isActive, updatedAt: new Date() }
+         });
+      }
+      return NextResponse.json({ success: true, message: `${values.length} data berhasil diimpor` });
+    } else {
+      // Single Create
+      await db.insert(tindakan).values({
+        kodeCdi: body.kodeCdi,
+        name: body.name,
+        isActive: body.isActive ?? true,
+      });
+      return NextResponse.json({ success: true });
+    }
   } catch (err) {
     console.error(err);
     return NextResponse.json({ success: false, message: "Gagal menyimpan data" }, { status: 500 });
