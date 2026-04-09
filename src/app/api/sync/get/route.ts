@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { icd10, icd9, tariffs } from "@/db/schema";
+import { icd10, icd9, tariffs, tindakan, diagnosa, bpjs } from "@/db/schema";
 import { gt } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -21,12 +21,27 @@ export async function GET(req: NextRequest) {
       where: gt(tariffs.updatedAt, timestamp),
     });
 
+    const tindakanData = await db.query.tindakan.findMany({
+      where: gt(tindakan.updatedAt, timestamp),
+    });
+
+    const diagnosaData = await db.query.diagnosa.findMany({
+      where: gt(diagnosa.updatedAt, timestamp),
+    });
+
+    const bpjsData = await db.query.bpjs.findMany({
+      where: gt(bpjs.updatedAt, timestamp),
+    });
+
     return NextResponse.json({
       success: true,
       data: {
         icd10: icd10Data,
         icd9: icd9Data,
         tariffs: tariffsData,
+        tindakan: tindakanData,
+        diagnosa: diagnosaData,
+        bpjs: bpjsData,
       },
       serverTimestamp: Date.now(),
     });
