@@ -2,14 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { bpjs } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { validateAdminSession } from "@/lib/admin-auth";
+
+export async function GET(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const data = await db.select().from(bpjs).orderBy(bpjs.kodeBpjs);
+    return NextResponse.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ success: false, message: "Gagal mengambil data" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
-    
+
     if (Array.isArray(body)) {
       if (body.length === 0) return NextResponse.json({ success: true, message: "Tidak ada data" });
-      
+
       const values = body.map((item: any) => ({
         kodeBpjs: item.kodeBpjs,
         tindakanId: item.tindakanId || null,
@@ -18,18 +35,17 @@ export async function POST(req: NextRequest) {
         isActive: item.isActive ?? true,
       }));
 
-      // Menggunakan upsert (onConflictDoUpdate)
-      for(const val of values) {
-         await db.insert(bpjs).values(val).onConflictDoUpdate({
-           target: bpjs.kodeBpjs,
-           set: { 
-             tindakanId: val.tindakanId, 
-             diagnosaId: val.diagnosaId, 
-             tariff: val.tariff, 
-             isActive: val.isActive, 
-             updatedAt: new Date() 
-           }
-         });
+      for (const val of values) {
+        await db.insert(bpjs).values(val).onConflictDoUpdate({
+          target: bpjs.kodeBpjs,
+          set: {
+            tindakanId: val.tindakanId,
+            diagnosaId: val.diagnosaId,
+            tariff: val.tariff,
+            isActive: val.isActive,
+            updatedAt: new Date(),
+          },
+        });
       }
       return NextResponse.json({ success: true, message: `${values.length} data berhasil diimpor` });
     } else {
@@ -49,6 +65,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
     await db.update(bpjs)
@@ -69,6 +88,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { id } = await req.json();
     await db.delete(bpjs).where(eq(bpjs.id, id));

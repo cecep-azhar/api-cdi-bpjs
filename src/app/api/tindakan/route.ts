@@ -2,31 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { tindakan } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { validateAdminSession } from "@/lib/admin-auth";
+
+export async function GET(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const data = await db.select().from(tindakan).orderBy(tindakan.kodeCdi);
+    return NextResponse.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ success: false, message: "Gagal mengambil data" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
-    
+
     if (Array.isArray(body)) {
-      // Batch Import from CSV
       if (body.length === 0) return NextResponse.json({ success: true, message: "Tidak ada data" });
-      
+
       const values = body.map((item: any) => ({
         kodeCdi: item.kodeCdi,
         name: item.name,
         isActive: item.isActive ?? true,
       }));
 
-      // Menggunakan upsert (onConflictDoUpdate) agar tidak error saat kode sama
-      for(const val of values) {
-         await db.insert(tindakan).values(val).onConflictDoUpdate({
-           target: tindakan.kodeCdi,
-           set: { name: val.name, isActive: val.isActive, updatedAt: new Date() }
-         });
+      for (const val of values) {
+        await db.insert(tindakan).values(val).onConflictDoUpdate({
+          target: tindakan.kodeCdi,
+          set: { name: val.name, isActive: val.isActive, updatedAt: new Date() },
+        });
       }
       return NextResponse.json({ success: true, message: `${values.length} data berhasil diimpor` });
     } else {
-      // Single Create
       await db.insert(tindakan).values({
         kodeCdi: body.kodeCdi,
         name: body.name,
@@ -41,6 +55,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
     await db.update(tindakan)
@@ -54,6 +71,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { id } = await req.json();
     await db.delete(tindakan).where(eq(tindakan.id, id));

@@ -2,26 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { diagnosa } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { validateAdminSession } from "@/lib/admin-auth";
+
+export async function GET(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const data = await db.select().from(diagnosa).orderBy(diagnosa.kodeCdi);
+    return NextResponse.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ success: false, message: "Gagal mengambil data" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
-    
+
     if (Array.isArray(body)) {
       if (body.length === 0) return NextResponse.json({ success: true, message: "Tidak ada data" });
-      
+
       const values = body.map((item: any) => ({
         kodeCdi: item.kodeCdi,
         name: item.name,
         isActive: item.isActive ?? true,
       }));
 
-      // Menggunakan upsert (onConflictDoUpdate)
-      for(const val of values) {
-         await db.insert(diagnosa).values(val).onConflictDoUpdate({
-           target: diagnosa.kodeCdi,
-           set: { name: val.name, isActive: val.isActive, updatedAt: new Date() }
-         });
+      for (const val of values) {
+        await db.insert(diagnosa).values(val).onConflictDoUpdate({
+          target: diagnosa.kodeCdi,
+          set: { name: val.name, isActive: val.isActive, updatedAt: new Date() },
+        });
       }
       return NextResponse.json({ success: true, message: `${values.length} data berhasil diimpor` });
     } else {
@@ -39,6 +55,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await req.json();
     await db.update(diagnosa)
@@ -52,6 +71,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { id } = await req.json();
     await db.delete(diagnosa).where(eq(diagnosa.id, id));

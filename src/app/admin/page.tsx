@@ -76,10 +76,12 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div>
+    <div className="animate-in fade-in duration-500">
       <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-desc">Ringkasan data master CDI BPJS API</p>
+        <div className="header-left">
+          <h1 className="page-title">Dashboard Overview</h1>
+          <p className="page-desc">Ringkasan statistik data master dan status sistem CDI BPJS</p>
+        </div>
       </div>
 
       <div className="stats-grid">
@@ -87,70 +89,95 @@ export default async function AdminDashboard() {
           <Link href={s.href} key={s.label} className="stat-card" style={{ textDecoration: "none" }}>
             <div className="stat-header">
               <div className="stat-label">Total {s.label}</div>
-              <div className="stat-icon" style={{ color: '#64748b' }}>
+              <div className="stat-icon" style={{ 
+                background: s.color + '15',
+                color: s.color,
+                padding: '10px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
                 {s.icon}
               </div>
             </div>
             <div className="stat-value">{s.value.toLocaleString()}</div>
-            <div className="stat-desc">Jumlah {s.label.toLowerCase()} terdaftar</div>
+            <div className="stat-desc">Data {s.label.toLowerCase()} saat ini</div>
           </Link>
         ))}
       </div>
 
-      <div className="admin-card">
-        <h2 style={{ color: "#0f172a", fontSize: "1.1rem", fontWeight: 700, marginBottom: "1rem" }}>
-          Aksi Cepat
-        </h2>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <Link href="/admin/tindakan" className="btn btn-primary">
-            + Tambah Tindakan
-          </Link>
-          <Link href="/admin/diagnosa" className="btn btn-primary">
-            + Tambah Diagnosa
-          </Link>
-          <Link href="/admin/bpjs" className="btn btn-primary">
-            + Tambah BPJS
-          </Link>
-        </div>
-      </div>
-
-      <div className="admin-card" style={{ marginBottom: "0" }}>
-        <h2 style={{ color: "#0f172a", fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.75rem" }}>
-          Endpoint Sinkronisasi
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {[
-            { method: "GET", path: "/api/sync/get?last_sync=<timestamp>", desc: "Ambil data terbaru dari server" },
-            { method: "POST", path: "/api/sync/post", desc: "Kirim data batch dari klien" },
-          ].map((ep) => (
-            <div key={ep.path} style={{
-              display: "flex", gap: "1rem", alignItems: "center",
-              padding: "0.75rem 1rem",
-              background: "#f8fafc",
-              borderRadius: "8px",
-              border: "1px solid #e2e8f0",
-            }}>
-              <span style={{
-                padding: "0.2rem 0.6rem",
-                borderRadius: "6px",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                background: ep.method === "GET" ? "rgba(34, 197, 94, 0.12)" : "rgba(99, 102, 241, 0.12)",
-                color: ep.method === "GET" ? "#16a34a" : "#4f46e5",
-                border: ep.method === "GET" ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(99,102,241,0.2)",
-                flexShrink: 0,
-              }}>
-                {ep.method}
-              </span>
-              <code style={{ color: "#0ea5e9", fontSize: "0.85rem", fontWeight: 500, flex: 1, wordBreak: "break-all" }}>{ep.path}</code>
-              <span style={{ color: "#64748b", fontSize: "0.8rem", flexShrink: 0 }}>{ep.desc}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+        <div className="admin-card" style={{ marginBottom: 0 }}>
+          <div className="card-header">
+            <h2 className="card-title">Aksi Cepat</h2>
+          </div>
+          <div className="card-content">
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+              Pintasan untuk mengelola dan menambah data master baru ke dalam sistem.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link href="/admin/tindakan" className="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Tindakan
+              </Link>
+              <Link href="/admin/diagnosa" className="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Diagnosa
+              </Link>
+              <Link href="/admin/bpjs" className="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                BPJS
+              </Link>
             </div>
-          ))}
+          </div>
+        </div>
+
+        <div className="admin-card" style={{ marginBottom: 0 }}>
+          <div className="card-header">
+            <h2 className="card-title">Endpoint API</h2>
+          </div>
+          <div className="card-content">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { method: "GET", path: "/api/sync/get", desc: "Data Fetching" },
+                { method: "POST", path: "/api/sync/post", desc: "Data Sync" },
+              ].map((ep) => (
+                <div key={ep.path} style={{
+                  display: "flex", gap: "1rem", alignItems: "center",
+                  padding: "1rem",
+                  background: "#f8fafc",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                }}>
+                  <span style={{
+                    padding: "0.25rem 0.6rem",
+                    borderRadius: "6px",
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                    background: ep.method === "GET" ? "#dcfce7" : "#e0e7ff",
+                    color: ep.method === "GET" ? "#166534" : "#3730a3",
+                    flexShrink: 0,
+                  }}>
+                    {ep.method}
+                  </span>
+                  <code style={{ color: "#0f172a", fontSize: "0.85rem", fontWeight: 600, flex: 1, wordBreak: "break-all" }}>{ep.path}</code>
+                  <span style={{ color: "#64748b", fontSize: "0.75rem", fontWeight: 500 }}>{ep.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       
-      <div style={{ textAlign: "center", padding: "2rem", color: "#94a3b8", fontSize: "0.85rem" }}>
-        Development by Software Engineering RND 2026
+      <div style={{ textAlign: "center", padding: "1rem 0 3rem 0", color: "#94a3b8", fontSize: "0.8rem", fontWeight: 500 }}>
+        © 2026 RND SOFTWARE ENGINEERING • PREMIUM ADMIN INTERFACE
       </div>
     </div>
   );

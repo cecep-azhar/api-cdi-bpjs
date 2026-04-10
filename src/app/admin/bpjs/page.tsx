@@ -37,11 +37,21 @@ export default function BpjsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/sync/get?last_sync=0");
-      const json = await res.json();
-      setData(json.data?.bpjs || []);
-      setTindakanList(json.data?.tindakan || []);
-      setDiagnosaList(json.data?.diagnosa || []);
+      const [bpjsRes, tindakanRes, diagnosaRes] = await Promise.all([
+        fetch("/api/bpjs"),
+        fetch("/api/tindakan"),
+        fetch("/api/diagnosa"),
+      ]);
+      const [bpjsJson, tindakanJson, diagnosaJson] = await Promise.all([
+        bpjsRes.json(),
+        tindakanRes.json(),
+        diagnosaRes.json(),
+      ]);
+      setData(bpjsJson.success ? bpjsJson.data || [] : []);
+      setTindakanList(tindakanJson.success ? tindakanJson.data || [] : []);
+      setDiagnosaList(diagnosaJson.success ? diagnosaJson.data || [] : []);
+    } catch (err) {
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -212,180 +222,195 @@ export default function BpjsPage() {
   };
 
   return (
-    <div>
+    <div className="animate-in fade-in duration-500">
       <div className="page-header">
-        <h1 className="page-title">BPJS</h1>
-        <p className="page-desc">Kelola mapping kode BPJS dengan tindakan & diagnosa</p>
+        <div className="header-left">
+          <h1 className="page-title">Mapping BPJS</h1>
+          <p className="page-desc">Kelola tarif/mapping kode BPJS dengan tindakan & diagnosa medical</p>
+        </div>
+        <button className="btn btn-primary" onClick={openAdd}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Tambah Mapping
+        </button>
       </div>
 
       <div className="admin-card">
-        <div className="toolbar" style={{ justifyContent: "space-between" }}>
-          <div className="search-bar-wrapper">
-            <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              className="search-bar"
-              type="text"
-              placeholder="Cari kode BPJS..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={handleDownloadSample}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+        <div className="card-header">
+          <h2 className="card-title">Daftar Mapping BPJS</h2>
+          <div className="toolbar" style={{ margin: 0 }}>
+            <div className="search-container" style={{ width: '300px' }}>
+              <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
               </svg>
-              Template
-            </button>
-            <button className="btn btn-secondary" onClick={handleExport}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              Export
-            </button>
-            <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImport} style={{ display: 'none' }} />
-            <button className="btn btn-success" onClick={() => fileInputRef.current?.click()}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-              Import CSV
-            </button>
-            <button className="btn btn-primary" style={{ background: "linear-gradient(135deg, #0891b2, #06b6d4)" }} onClick={openAdd}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Tambah BPJS
-            </button>
+              <input
+                className="search-input"
+                type="text"
+                placeholder="Cari kode BPJS..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-secondary" onClick={handleDownloadSample} title="Unduh Template">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </button>
+              <button className="btn btn-secondary" onClick={handleExport} title="Export CSV">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </button>
+              <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImport} style={{ display: 'none' }} />
+              <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()} title="Import CSV">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        {loading ? (
-          <div className="empty-state">Loading...</div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
-            </svg>
-            <p>Belum ada data BPJS</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Kode BPJS</th>
-                  <th>Tindakan</th>
-                  <th>Diagnosa</th>
-                  <th>Tarif</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => (
-                  <tr key={item.id}>
-                    <td><code style={{ color: "#67e8f9", fontSize: "0.8rem" }}>{item.kodeBpjs}</code></td>
-                    <td style={{ fontSize: "0.8rem", color: "rgba(230,237,243,0.65)" }}>{getTindakanName(item.tindakanId)}</td>
-                    <td style={{ fontSize: "0.8rem", color: "rgba(230,237,243,0.65)" }}>{getDiagnosaName(item.diagnosaId)}</td>
-                    <td style={{ color: "#4ade80", fontWeight: 600 }}>{formatRupiah(item.tariff)}</td>
-                    <td>
-                      <span className={item.isActive ? "badge-active" : "badge-inactive"}>
-                        {item.isActive ? "Aktif" : "Nonaktif"}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button className="btn-icon" onClick={() => openEdit(item)} title="Edit">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                          </svg>
-                        </button>
-                        <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
+        <div className="card-content" style={{ padding: 0 }}>
+          {loading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Memuat data...</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '5rem', textAlign: 'center' }}>
+              <div style={{ color: '#e2e8f0', marginBottom: '1rem' }}>
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ margin: '0 auto' }}>
+                  <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
+                </svg>
+              </div>
+              <p style={{ color: '#94a3b8', fontWeight: 500 }}>Belum ada data BPJS</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Kode BPJS</th>
+                    <th>Ref Tindakan</th>
+                    <th>Ref Diagnosa</th>
+                    <th>Tarif</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {filtered.map((item) => (
+                    <tr key={item.id}>
+                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.kodeBpjs}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{getTindakanName(item.tindakanId)}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{getDiagnosaName(item.diagnosaId)}</td>
+                      <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatRupiah(item.tariff)}</td>
+                      <td>
+                        <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
+                          {item.isActive ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.25rem", justifyContent: "flex-end" }}>
+                          <button className="btn-icon" onClick={() => openEdit(item)} title="Edit">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">{editItem ? "Edit BPJS" : "Tambah BPJS"}</div>
-            <div className="form-grid" style={{ gridTemplateColumns: "1fr" }}>
-              <div className="form-field">
-                <label>Kode BPJS</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Contoh: B001"
-                  value={form.kodeBpjs}
-                  onChange={(e) => setForm({ ...form, kodeBpjs: e.target.value })}
-                />
-              </div>
-              <div className="form-field">
-                <label>Tindakan (opsional)</label>
-                <select
-                  className="form-input"
-                  value={form.tindakanId}
-                  onChange={(e) => setForm({ ...form, tindakanId: e.target.value })}
-                >
-                  <option value="">-- Pilih Tindakan --</option>
-                  {tindakanList.map((t) => (
-                    <option key={t.id} value={t.id}>{t.kodeCdi} - {t.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Diagnosa (opsional)</label>
-                <select
-                  className="form-input"
-                  value={form.diagnosaId}
-                  onChange={(e) => setForm({ ...form, diagnosaId: e.target.value })}
-                >
-                  <option value="">-- Pilih Diagnosa --</option>
-                  {diagnosaList.map((d) => (
-                    <option key={d.id} value={d.id}>{d.kodeCdi} - {d.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Tarif (Rp)</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  placeholder="0"
-                  value={form.tariff}
-                  onChange={(e) => setForm({ ...form, tariff: e.target.value })}
-                />
-              </div>
-              <div className="form-field">
-                <label>Status</label>
-                <select
-                  className="form-input"
-                  value={form.isActive ? "1" : "0"}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.value === "1" })}
-                >
-                  <option value="1">Aktif</option>
-                  <option value="0">Nonaktif</option>
-                </select>
+          <div className="modal-box" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              {editItem ? "Edit Mapping BPJS" : "Tambah Mapping BPJS Baru"}
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Kode BPJS</label>
+                  <input
+                    className="search-input"
+                    style={{ paddingLeft: '1rem' }}
+                    type="text"
+                    placeholder="Contoh: B001"
+                    value={form.kodeBpjs}
+                    onChange={(e) => setForm({ ...form, kodeBpjs: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Tindakan (Opsional)</label>
+                  <select
+                    className="search-input"
+                    style={{ paddingLeft: '1rem', appearance: 'auto' }}
+                    value={form.tindakanId}
+                    onChange={(e) => setForm({ ...form, tindakanId: e.target.value })}
+                  >
+                    <option value="">-- Pilih Tindakan --</option>
+                    {tindakanList.map((t) => (
+                      <option key={t.id} value={t.id}>{t.kodeCdi} - {t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Diagnosa (Opsional)</label>
+                  <select
+                    className="search-input"
+                    style={{ paddingLeft: '1rem', appearance: 'auto' }}
+                    value={form.diagnosaId}
+                    onChange={(e) => setForm({ ...form, diagnosaId: e.target.value })}
+                  >
+                    <option value="">-- Pilih Diagnosa --</option>
+                    {diagnosaList.map((d) => (
+                      <option key={d.id} value={d.id}>{d.kodeCdi} - {d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Tarif (Rp)</label>
+                  <input
+                    className="search-input"
+                    style={{ paddingLeft: '1rem' }}
+                    type="number"
+                    placeholder="0"
+                    value={form.tariff}
+                    onChange={(e) => setForm({ ...form, tariff: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Status</label>
+                  <select
+                    className="search-input"
+                    style={{ paddingLeft: '1rem', appearance: 'auto' }}
+                    value={form.isActive ? "1" : "0"}
+                    onChange={(e) => setForm({ ...form, isActive: e.target.value === "1" })}
+                  >
+                    <option value="1">Aktif</option>
+                    <option value="0">Nonaktif</option>
+                  </select>
+                </div>
               </div>
             </div>
-            <div className="modal-actions">
+            <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? "Menyimpan..." : "Simpan"}
+                {saving ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
             </div>
           </div>

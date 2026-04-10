@@ -93,150 +93,179 @@ export default function ApiKeysPage() {
   };
 
   return (
-    <div>
+    <div className="animate-in fade-in duration-500">
       <div className="page-header">
-        <h1 className="page-title">Master API Keys</h1>
-        <p className="page-desc">Kelola kunci akses untuk sinkronisasi client desktop</p>
+        <div className="header-left">
+          <h1 className="page-title">API Access Keys</h1>
+          <p className="page-desc">Kelola kunci akses untuk sinkronisasi client desktop CDI secara aman</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Generate New Key
+        </button>
       </div>
 
       <div className="admin-card">
-        <div className="toolbar">
-          <div style={{ flex: 1 }}></div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Generate New Key
-          </button>
+        <div className="card-header">
+          <h2 className="card-title">Daftar Kunci Akses</h2>
         </div>
 
-        {loading ? (
-          <div className="empty-state">Memuat data...</div>
-        ) : data.length === 0 ? (
-          <div className="empty-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            <p>Belum ada API Key yang dibuat</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nama Identitas</th>
-                  <th>Prefix Kunci</th>
-                  <th>Kedaluwarsa</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{item.name}</div>
-                      <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.2rem" }}>Dibuat: {formatDate(item.createdAt)}</div>
-                    </td>
-                    <td>
-                      <code style={{ color: "#818cf8", background: "rgba(129, 140, 248, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                        {item.key.substring(0, 10)}...
-                      </code>
-                    </td>
-                    <td style={{ fontSize: "0.85rem" }}>
-                      {formatDate(item.expiresAt)}
-                    </td>
-                    <td>
-                      <span className={item.isActive ? "badge-active" : "badge-inactive"}>
-                        {item.isActive ? "Aktif" : "Nonaktif"}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                      </button>
-                    </td>
+        <div className="card-content" style={{ padding: 0 }}>
+          {loading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Memuat data...</div>
+          ) : data.length === 0 ? (
+            <div style={{ padding: '5rem', textAlign: 'center' }}>
+              <div style={{ color: '#e2e8f0', marginBottom: '1rem' }}>
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ margin: '0 auto' }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <p style={{ color: '#94a3b8', fontWeight: 500 }}>Belum ada API Key yang terdaftar</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Identitas Client</th>
+                    <th>Prefix Kunci</th>
+                    <th>Kedaluwarsa</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {data.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.name}</div>
+                        <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.15rem" }}>
+                          Dibuat: {formatDate(item.createdAt)}
+                        </div>
+                      </td>
+                      <td>
+                        <code style={{ 
+                          color: "#6366f1", 
+                          background: "#f5f3ff", 
+                          padding: "0.25rem 0.6rem", 
+                          borderRadius: "6px",
+                          fontSize: '0.8rem',
+                          fontWeight: 600
+                        }}>
+                          {item.key.substring(0, 10)}...
+                        </code>
+                      </td>
+                      <td style={{ fontSize: "0.85rem", color: '#64748b' }}>
+                        {formatDate(item.expiresAt)}
+                      </td>
+                      <td>
+                        <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
+                          {item.isActive ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus Kunci">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-box" style={{ maxWidth: "500px" }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">Generate API Key Baru</div>
+            <div className="modal-header">
+              {newKey ? "Kunci Berhasil Dibuat" : "Generate API Key Baru"}
+            </div>
             
-            {newKey ? (
-              <div style={{ textAlign: "center", padding: "1rem 0" }}>
-                <div style={{ 
-                  background: "rgba(34, 197, 94, 0.1)", 
-                  border: "1px dashed #22c55e", 
-                  padding: "1.5rem", 
-                  borderRadius: "12px",
-                  marginBottom: "1.5rem"
-                }}>
-                  <p style={{ color: "#4ade80", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-                    Salin kunci ini sekarang. Kunci ini tidak akan ditampilkan lagi demi keamanan.
-                  </p>
-                  <code style={{ 
-                    display: "block", 
-                    fontSize: "1.1rem", 
-                    color: "#0f172a", 
-                    wordBreak: "break-all",
-                    background: "#f1f5f9",
-                    padding: "1rem",
-                    borderRadius: "8px",
-                    userSelect: "all"
+            <div className="modal-body">
+              {newKey ? (
+                <div style={{ padding: "0.5rem 0" }}>
+                  <div style={{ 
+                    background: "#f0fdf4", 
+                    border: "1px dashed #22c55e", 
+                    padding: "1.5rem", 
+                    borderRadius: "12px",
+                    marginBottom: "1rem"
                   }}>
-                    {newKey}
-                  </code>
+                    <p style={{ color: "#166534", fontSize: "0.85rem", marginBottom: "1rem", fontWeight: 500 }}>
+                      ⚠️ Salin dan simpan kunci ini di tempat yang aman. Anda tidak akan bisa melihatnya lagi setelah jendela ini ditutup.
+                    </p>
+                    <code style={{ 
+                      display: "block", 
+                      fontSize: "1rem", 
+                      color: "#0f172a", 
+                      wordBreak: "break-all",
+                      background: "#ffffff",
+                      border: '1px solid #e2e8f0',
+                      padding: "1rem",
+                      borderRadius: "8px",
+                      userSelect: "all",
+                      fontWeight: 700
+                    }}>
+                      {newKey}
+                    </code>
+                  </div>
                 </div>
-                <button className="btn btn-primary" style={{ width: "100%" }} onClick={closeModal}>
-                  Selesai
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="form-grid" style={{ gridTemplateColumns: "1fr" }}>
-                  <div className="form-field">
-                    <label>Nama Identitas Client</label>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Nama Identitas Client</label>
                     <input
-                      className="form-input"
+                      className="search-input"
+                      style={{ paddingLeft: '1rem' }}
                       type="text"
                       placeholder="Misal: PC Kasir 01"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
                   </div>
-                  <div className="form-field">
-                    <label>Masa Berlaku</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Masa Berlaku</label>
                     <select
-                      className="form-input"
+                      className="search-input"
+                      style={{ paddingLeft: '1rem', appearance: 'auto' }}
                       value={form.expirationYears}
                       onChange={(e) => setForm({ ...form, expirationYears: e.target.value })}
                     >
                       <option value="1">1 Tahun</option>
                       <option value="2">2 Tahun</option>
                       <option value="3">3 Tahun</option>
-                      <option value="forever">Selamanya</option>
+                      <option value="forever">Selamanya (Tidak Disarankan)</option>
                     </select>
                   </div>
                 </div>
-                <div className="modal-actions">
+              )}
+            </div>
+
+            <div className="modal-footer">
+              {newKey ? (
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={closeModal}>
+                  Sudah Saya Simpan
+                </button>
+              ) : (
+                <>
                   <button className="btn btn-secondary" onClick={closeModal}>Batal</button>
                   <button className="btn btn-primary" onClick={handleCreate} disabled={saving || !form.name}>
                     {saving ? "Generating..." : "Generate Key"}
                   </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
