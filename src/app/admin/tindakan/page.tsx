@@ -6,12 +6,13 @@ type Tindakan = {
   id: number;
   kodeCdi: string;
   name: string;
+  penjelasan?: string;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 };
 
-const emptyForm = { kodeCdi: "", name: "", isActive: true };
+const emptyForm = { kodeCdi: "", name: "", penjelasan: "", isActive: true };
 
 export default function TindakanPage() {
   const [data, setData] = useState<Tindakan[]>([]);
@@ -61,7 +62,7 @@ export default function TindakanPage() {
 
   const openEdit = (item: Tindakan) => {
     setEditItem(item);
-    setForm({ kodeCdi: item.kodeCdi, name: item.name, isActive: item.isActive });
+    setForm({ kodeCdi: item.kodeCdi, name: item.name, penjelasan: item.penjelasan || "", isActive: item.isActive });
     setShowModal(true);
   };
 
@@ -305,6 +306,16 @@ export default function TindakanPage() {
                     placeholder="Nama tindakan medis"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Penjelasan (Opsional)</label>
+                  <textarea
+                    className="search-input"
+                    style={{ padding: '0.75rem 1rem', minHeight: '80px', resize: 'vertical' }}
+                    placeholder="Penjelasan deskriptif tindakan"
+                    value={form.penjelasan}
+                    onChange={(e) => setForm({ ...form, penjelasan: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

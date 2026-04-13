@@ -30,13 +30,14 @@ export async function POST(req: NextRequest) {
       const values = body.map((item: any) => ({
         kodeCdi: item.kodeCdi,
         name: item.name,
+        penjelasan: item.penjelasan,
         isActive: item.isActive ?? true,
       }));
 
       for (const val of values) {
         await db.insert(tindakan).values(val).onConflictDoUpdate({
           target: tindakan.kodeCdi,
-          set: { name: val.name, isActive: val.isActive, updatedAt: new Date() },
+          set: { name: val.name, penjelasan: val.penjelasan, isActive: val.isActive, updatedAt: new Date() },
         });
       }
       return NextResponse.json({ success: true, message: `${values.length} data berhasil diimpor` });
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
       await db.insert(tindakan).values({
         kodeCdi: body.kodeCdi,
         name: body.name,
+        penjelasan: body.penjelasan,
         isActive: body.isActive ?? true,
       });
       return NextResponse.json({ success: true });
@@ -61,7 +63,7 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     await db.update(tindakan)
-      .set({ kodeCdi: body.kodeCdi, name: body.name, isActive: body.isActive, updatedAt: new Date() })
+      .set({ kodeCdi: body.kodeCdi, name: body.name, penjelasan: body.penjelasan, isActive: body.isActive, updatedAt: new Date() })
       .where(eq(tindakan.id, body.id));
     return NextResponse.json({ success: true });
   } catch (err) {
