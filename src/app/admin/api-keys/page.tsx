@@ -18,6 +18,8 @@ export default function ApiKeysPage() {
   const [form, setForm] = useState({ name: "", expirationYears: "1" });
   const [newKey, setNewKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [visibleKeys, setVisibleKeys] = useState<Record<number, boolean>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,6 +58,16 @@ export default function ApiKeysPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCopy = (id: number, keyStr: string) => {
+    navigator.clipboard.writeText(keyStr);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const toggleVisibility = (id: number) => {
+    setVisibleKeys((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleDelete = async (id: number) => {
@@ -147,16 +159,53 @@ export default function ApiKeysPage() {
                         </div>
                       </td>
                       <td>
-                        <code style={{ 
-                          color: "#6366f1", 
-                          background: "#f5f3ff", 
-                          padding: "0.25rem 0.6rem", 
-                          borderRadius: "6px",
-                          fontSize: '0.8rem',
-                          fontWeight: 600
-                        }}>
-                          {item.key.substring(0, 10)}...
-                        </code>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <code style={{ 
+                            color: "#6366f1", 
+                            background: "#f5f3ff", 
+                            padding: "0.25rem 0.6rem", 
+                            borderRadius: "6px",
+                            fontSize: '0.8rem',
+                            fontWeight: 600
+                          }}>
+                            {visibleKeys[item.id] ? item.key : `${item.key.substring(0, 10)}...`}
+                          </code>
+                          <button 
+                            className="btn-icon" 
+                            onClick={() => toggleVisibility(item.id)}
+                            title={visibleKeys[item.id] ? "Sembunyikan" : "Lihat Detail"}
+                            style={{ width: "28px", height: "28px" }}
+                          >
+                            {visibleKeys[item.id] ? (
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23" stroke="#64748b"></line>
+                              </svg>
+                            ) : (
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            )}
+                          </button>
+                          <button 
+                            className="btn-icon" 
+                            onClick={() => handleCopy(item.id, item.key)}
+                            title="Salin Kunci"
+                            style={{ width: "28px", height: "28px" }}
+                          >
+                            {copiedId === item.id ? (
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            ) : (
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                       <td style={{ fontSize: "0.85rem", color: '#64748b' }}>
                         {formatDate(item.expiresAt)}

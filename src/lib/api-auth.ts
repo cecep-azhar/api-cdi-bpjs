@@ -8,10 +8,11 @@ import { eq, and, gt, or, isNull } from "drizzle-orm";
  * Checks if the key exists, is active, and is not expired.
  */
 export async function validateApiKey(req: NextRequest) {
-  const apiKey = req.headers.get("x-api-key");
+  // Support either header OR URL query parameter for easiest browser testing
+  const apiKey = req.headers.get("x-api-key") || req.nextUrl.searchParams.get("x-api-key");
   
   if (!apiKey) {
-    return { isValid: false, message: "API Key is missing (use x-api-key header)" };
+    return { isValid: false, message: "API Key is missing (use x-api-key header or ?x-api-key= query parameter)" };
   }
 
   const now = new Date();
