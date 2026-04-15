@@ -12,7 +12,7 @@ export async function validateApiKey(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key") || req.nextUrl.searchParams.get("x-api-key");
   
   if (!apiKey) {
-    return { isValid: false, message: "API Key is missing (use x-api-key header or ?x-api-key= query parameter)" };
+    return { isValid: false, message: "Token tidak boleh kosong, masukkan token pada header 'x-api-key' atau sebagai parameter query '?x-api-key='" };
   }
 
   const now = new Date();
@@ -30,7 +30,7 @@ export async function validateApiKey(req: NextRequest) {
   });
 
   if (!keyRecord) {
-    return { isValid: false, message: "Invalid, inactive, or expired API Key" };
+    return { isValid: false, message: "Token tidak valid, tidak aktif, atau kadaluarsa" };
   }
 
   return { isValid: true, key: keyRecord };

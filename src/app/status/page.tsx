@@ -20,9 +20,12 @@ type HealthData = {
 export default function StatusPage() {
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [history] = useState<boolean[]>(() => 
-    Array.from({ length: 48 }, () => Math.random() > 0.02)
-  );
+  const [history, setHistory] = useState<boolean[]>([]);
+
+  // Generate history only on client side to avoid hydration mismatch
+  useEffect(() => {
+    setHistory(Array.from({ length: 48 }, () => Math.random() > 0.02));
+  }, []);
 
   const fetchStatus = async () => {
     try {
@@ -102,13 +105,19 @@ export default function StatusPage() {
             <span>Last 24 Hours</span>
           </div>
           <div className="heartbeat-grid">
-            {history.map((up, i) => (
-              <div 
-                key={i} 
-                className={`heartbeat-bar ${up ? "up" : "down"}`}
-                title={up ? "Operational" : "Down"}
-              ></div>
-            ))}
+            {history.length === 0 ? (
+              Array.from({ length: 48 }).map((_, i) => (
+                <div key={i} className="heartbeat-bar up"></div>
+              ))
+            ) : (
+              history.map((up, i) => (
+                <div
+                  key={i}
+                  className={`heartbeat-bar ${up ? "up" : "down"}`}
+                  title={up ? "Operational" : "Down"}
+                ></div>
+              ))
+            )}
           </div>
           <div className="heartbeat-footer">
             <span>24h ago</span>

@@ -2,21 +2,21 @@
 
 import { useEffect, useState, useRef } from "react";
 
-type Tindakan = { id: number; kodeCdi: string; name: string };
-type Diagnosa = { id: number; kodeCdi: string; name: string };
+type Action = { id: number; cdiCode: string; name: string };
+type Diagnosis = { id: number; cdiCode: string; name: string };
 type BpjsItem = {
   id: number;
-  kodeBpjs: string;
-  tindakanId: number | null;
-  diagnosaId: number | null;
+  bpjsCode: string;
+  actionId: number | null;
+  diagnosisId: number | null;
   tariff: number;
   isActive: boolean;
 };
 
 const emptyForm = {
-  kodeBpjs: "",
-  tindakanId: "",
-  diagnosaId: "",
+  bpjsCode: "",
+  actionId: "",
+  diagnosisId: "",
   tariff: "",
   isActive: true,
 };
@@ -24,8 +24,8 @@ const emptyForm = {
 export default function BpjsPage() {
   const [data, setData] = useState<BpjsItem[]>([]);
   const [filtered, setFiltered] = useState<BpjsItem[]>([]);
-  const [tindakanList, setTindakanList] = useState<Tindakan[]>([]);
-  const [diagnosaList, setDiagnosaList] = useState<Diagnosa[]>([]);
+  const [actionList, setActionList] = useState<Action[]>([]);
+  const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -37,19 +37,19 @@ export default function BpjsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [bpjsRes, tindakanRes, diagnosaRes] = await Promise.all([
+      const [bpjsRes, actionsRes, diagnosesRes] = await Promise.all([
         fetch("/api/bpjs"),
-        fetch("/api/tindakan"),
-        fetch("/api/diagnosa"),
+        fetch("/api/actions"),
+        fetch("/api/diagnoses"),
       ]);
-      const [bpjsJson, tindakanJson, diagnosaJson] = await Promise.all([
+      const [bpjsJson, actionsJson, diagnosesJson] = await Promise.all([
         bpjsRes.json(),
-        tindakanRes.json(),
-        diagnosaRes.json(),
+        actionsRes.json(),
+        diagnosesRes.json(),
       ]);
       setData(bpjsJson.success ? bpjsJson.data || [] : []);
-      setTindakanList(tindakanJson.success ? tindakanJson.data || [] : []);
-      setDiagnosaList(diagnosaJson.success ? diagnosaJson.data || [] : []);
+      setActionList(actionsJson.success ? actionsJson.data || [] : []);
+      setDiagnosisList(diagnosesJson.success ? diagnosesJson.data || [] : []);
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
@@ -61,19 +61,19 @@ export default function BpjsPage() {
 
   useEffect(() => {
     const q = search.toLowerCase();
-    setFiltered(data.filter((d) => d.kodeBpjs.toLowerCase().includes(q)));
+    setFiltered(data.filter((d) => d.bpjsCode.toLowerCase().includes(q)));
   }, [data, search]);
 
-  const getTindakanName = (id: number | null) => {
+  const getActionName = (id: number | null) => {
     if (!id) return "-";
-    const t = tindakanList.find((t) => t.id === id);
-    return t ? `${t.kodeCdi} - ${t.name}` : id;
+    const t = actionList.find((t) => t.id === id);
+    return t ? `${t.cdiCode} - ${t.name}` : id;
   };
 
-  const getDiagnosaName = (id: number | null) => {
+  const getDiagnosisName = (id: number | null) => {
     if (!id) return "-";
-    const d = diagnosaList.find((d) => d.id === id);
-    return d ? `${d.kodeCdi} - ${d.name}` : id;
+    const d = diagnosisList.find((d) => d.id === id);
+    return d ? `${d.cdiCode} - ${d.name}` : id;
   };
 
   const formatRupiah = (v: number) =>
@@ -88,9 +88,9 @@ export default function BpjsPage() {
   const openEdit = (item: BpjsItem) => {
     setEditItem(item);
     setForm({
-      kodeBpjs: item.kodeBpjs,
-      tindakanId: item.tindakanId?.toString() || "",
-      diagnosaId: item.diagnosaId?.toString() || "",
+      bpjsCode: item.bpjsCode,
+      actionId: item.actionId?.toString() || "",
+      diagnosisId: item.diagnosisId?.toString() || "",
       tariff: item.tariff.toString(),
       isActive: item.isActive,
     });
@@ -103,9 +103,9 @@ export default function BpjsPage() {
       const method = editItem ? "PUT" : "POST";
       const body = {
         ...(editItem ? { id: editItem.id } : {}),
-        kodeBpjs: form.kodeBpjs,
-        tindakanId: form.tindakanId ? parseInt(form.tindakanId) : null,
-        diagnosaId: form.diagnosaId ? parseInt(form.diagnosaId) : null,
+        bpjsCode: form.bpjsCode,
+        actionId: form.actionId ? parseInt(form.actionId) : null,
+        diagnosisId: form.diagnosisId ? parseInt(form.diagnosisId) : null,
         tariff: parseFloat(form.tariff) || 0,
         isActive: form.isActive,
       };
@@ -119,7 +119,7 @@ export default function BpjsPage() {
         setShowModal(false);
         fetchData();
       } else {
-        alert(json.message || "Gagal menyimpan");
+        alert(json.message || "Failed to save");
       }
     } finally {
       setSaving(false);
@@ -127,7 +127,7 @@ export default function BpjsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Yakin hapus data ini?")) return;
+    if (!confirm("Are you sure you want to delete this item?")) return;
     await fetch("/api/bpjs", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -148,17 +148,17 @@ export default function BpjsPage() {
   };
 
   const handleExport = () => {
-    const headers = ["kode_bpjs", "kode_tindakan", "kode_diagnosa", "tarif", "is_active"];
+    const headers = ["bpjs_code", "action_code", "diagnosis_code", "tariff", "is_active"];
     const rows = data.map(d => {
-      const t = tindakanList.find(x => x.id === d.tindakanId)?.kodeCdi || "";
-      const dg = diagnosaList.find(x => x.id === d.diagnosaId)?.kodeCdi || "";
-      return `${d.kodeBpjs},${t},${dg},${d.tariff},${d.isActive ? 1 : 0}`;
+      const t = actionList.find(x => x.id === d.actionId)?.cdiCode || "";
+      const dg = diagnosisList.find(x => x.id === d.diagnosisId)?.cdiCode || "";
+      return `${d.bpjsCode},${t},${dg},${d.tariff},${d.isActive ? 1 : 0}`;
     });
     downloadCsv("bpjs_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
   const handleDownloadSample = () => {
-    const content = "kode_bpjs,kode_tindakan,kode_diagnosa,tarif,is_active\nB001,T001,D001,150000,1\nB002,T002,,50000,1\nB003,,D002,75000,1";
+    const content = "bpjs_code,action_code,diagnosis_code,tariff,is_active\nB001,T001,D001,150000,1\nB002,T002,,50000,1\nB003,,D002,75000,1";
     downloadCsv("bpjs_template.csv", content);
   };
 
@@ -184,13 +184,13 @@ export default function BpjsPage() {
             const tarif = parseFloat(cols[3].replace(/^"|"$/g, "").trim()) || 0;
             const isAct = cols[4] ? cols[4].replace(/^"|"$/g, "").trim() === "1" : true;
 
-            const tMatch = tindakanList.find(x => x.kodeCdi.toLowerCase() === kT.toLowerCase());
-            const dMatch = diagnosaList.find(x => x.kodeCdi.toLowerCase() === kD.toLowerCase());
+            const tMatch = actionList.find(x => x.cdiCode.toLowerCase() === kT.toLowerCase());
+            const dMatch = diagnosisList.find(x => x.cdiCode.toLowerCase() === kD.toLowerCase());
 
             payload.push({
-              kodeBpjs: kB,
-              tindakanId: tMatch ? tMatch.id : null,
-              diagnosaId: dMatch ? dMatch.id : null,
+              bpjsCode: kB,
+              actionId: tMatch ? tMatch.id : null,
+              diagnosisId: dMatch ? dMatch.id : null,
               tariff: tarif,
               isActive: isAct
             });
@@ -205,13 +205,13 @@ export default function BpjsPage() {
         const json = await res.json();
         
         if (json.success) {
-          alert(`Sukses: ${json.message}`);
+          alert(`Success: ${json.message}`);
           fetchData();
         } else {
-          alert(`Gagal: ${json.message}`);
+          alert(`Failed: ${json.message}`);
         }
       } catch (err) {
-        alert("Terjadi kesalahan saat memproses file CSV.");
+        alert("An error occurred while processing the CSV file.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -225,20 +225,20 @@ export default function BpjsPage() {
     <div className="animate-in fade-in duration-500">
       <div className="page-header">
         <div className="header-left">
-          <h1 className="page-title">Mapping BPJS</h1>
-          <p className="page-desc">Kelola tarif/mapping kode BPJS dengan tindakan & diagnosa medical</p>
+          <h1 className="page-title">BPJS Mapping</h1>
+          <p className="page-desc">Manage BPJS code tariffs/mappings with medical actions & diagnoses</p>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Tambah Mapping
+          Add Mapping
         </button>
       </div>
 
       <div className="admin-card">
         <div className="card-header">
-          <h2 className="card-title">Daftar Mapping BPJS</h2>
+          <h2 className="card-title">BPJS Mapping List</h2>
           <div className="toolbar" style={{ margin: 0 }}>
             <div className="search-container" style={{ width: '300px' }}>
               <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -247,13 +247,13 @@ export default function BpjsPage() {
               <input
                 className="search-input"
                 type="text"
-                placeholder="Cari kode BPJS..."
+                placeholder="Search BPJS code..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-secondary" onClick={handleDownloadSample} title="Unduh Template">
+              <button className="btn btn-secondary" onClick={handleDownloadSample} title="Download Template">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
@@ -275,7 +275,7 @@ export default function BpjsPage() {
 
         <div className="card-content" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Memuat data...</div>
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Loading data...</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '5rem', textAlign: 'center' }}>
               <div style={{ color: '#e2e8f0', marginBottom: '1rem' }}>
@@ -283,31 +283,31 @@ export default function BpjsPage() {
                   <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
                 </svg>
               </div>
-              <p style={{ color: '#94a3b8', fontWeight: 500 }}>Belum ada data BPJS</p>
+              <p style={{ color: '#94a3b8', fontWeight: 500 }}>No BPJS data yet</p>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Kode BPJS</th>
-                    <th>Ref Tindakan</th>
-                    <th>Ref Diagnosa</th>
-                    <th>Tarif</th>
+                    <th>BPJS Code</th>
+                    <th>Action Ref</th>
+                    <th>Diagnosis Ref</th>
+                    <th>Tariff</th>
                     <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Aksi</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((item) => (
                     <tr key={item.id}>
-                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.kodeBpjs}</td>
-                      <td style={{ fontSize: '0.85rem' }}>{getTindakanName(item.tindakanId)}</td>
-                      <td style={{ fontSize: '0.85rem' }}>{getDiagnosaName(item.diagnosaId)}</td>
+                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.bpjsCode}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{getActionName(item.actionId)}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{getDiagnosisName(item.diagnosisId)}</td>
                       <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatRupiah(item.tariff)}</td>
                       <td>
                         <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
-                          {item.isActive ? "Aktif" : "Nonaktif"}
+                          {item.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td>
@@ -318,7 +318,7 @@ export default function BpjsPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                           </button>
-                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus">
+                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Delete">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <polyline points="3 6 5 6 21 6"></polyline>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -339,51 +339,51 @@ export default function BpjsPage() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              {editItem ? "Edit Mapping BPJS" : "Tambah Mapping BPJS Baru"}
+              {editItem ? "Edit BPJS Mapping" : "Add New BPJS Mapping"}
             </div>
             <div className="modal-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 2' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Kode BPJS</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>BPJS Code</label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: '1rem' }}
                     type="text"
-                    placeholder="Contoh: B001"
-                    value={form.kodeBpjs}
-                    onChange={(e) => setForm({ ...form, kodeBpjs: e.target.value })}
+                    placeholder="Example: B001"
+                    value={form.bpjsCode}
+                    onChange={(e) => setForm({ ...form, bpjsCode: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Tindakan (Opsional)</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Action (Optional)</label>
                   <select
                     className="search-input"
                     style={{ paddingLeft: '1rem', appearance: 'auto' }}
-                    value={form.tindakanId}
-                    onChange={(e) => setForm({ ...form, tindakanId: e.target.value })}
+                    value={form.actionId}
+                    onChange={(e) => setForm({ ...form, actionId: e.target.value })}
                   >
-                    <option value="">-- Pilih Tindakan --</option>
-                    {tindakanList.map((t) => (
-                      <option key={t.id} value={t.id}>{t.kodeCdi} - {t.name}</option>
+                    <option value="">-- Select Action --</option>
+                    {actionList.map((t) => (
+                      <option key={t.id} value={t.id}>{t.cdiCode} - {t.name}</option>
                     ))}
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Diagnosa (Opsional)</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Diagnosis (Optional)</label>
                   <select
                     className="search-input"
                     style={{ paddingLeft: '1rem', appearance: 'auto' }}
-                    value={form.diagnosaId}
-                    onChange={(e) => setForm({ ...form, diagnosaId: e.target.value })}
+                    value={form.diagnosisId}
+                    onChange={(e) => setForm({ ...form, diagnosisId: e.target.value })}
                   >
-                    <option value="">-- Pilih Diagnosa --</option>
-                    {diagnosaList.map((d) => (
-                      <option key={d.id} value={d.id}>{d.kodeCdi} - {d.name}</option>
+                    <option value="">-- Select Diagnosis --</option>
+                    {diagnosisList.map((d) => (
+                      <option key={d.id} value={d.id}>{d.cdiCode} - {d.name}</option>
                     ))}
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Tarif (Rp)</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Tariff (Rp)</label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: '1rem' }}
@@ -401,16 +401,16 @@ export default function BpjsPage() {
                     value={form.isActive ? "1" : "0"}
                     onChange={(e) => setForm({ ...form, isActive: e.target.value === "1" })}
                   >
-                    <option value="1">Aktif</option>
-                    <option value="0">Nonaktif</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                   </select>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

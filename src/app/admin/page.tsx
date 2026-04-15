@@ -3,8 +3,8 @@ import Link from "next/link";
 
 export default async function AdminDashboard() {
   const [tindakanCount, diagnosaCount, bpjsCount, icd10Count, icd9Count] = await Promise.all([
-    db.query.tindakan.findMany().then((r) => r.length),
-    db.query.diagnosa.findMany().then((r) => r.length),
+    db.query.actions.findMany().then((r) => r.length),
+    db.query.diagnoses.findMany().then((r) => r.length),
     db.query.bpjs.findMany().then((r) => r.length),
     db.query.icd10.findMany().then((r) => r.length),
     db.query.icd9.findMany().then((r) => r.length),
@@ -14,7 +14,7 @@ export default async function AdminDashboard() {
     {
       label: "Tindakan",
       value: tindakanCount,
-      href: "/admin/tindakan",
+      href: "/admin/actions",
       color: "#6366f1",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -27,7 +27,7 @@ export default async function AdminDashboard() {
     {
       label: "Diagnosa",
       value: diagnosaCount,
-      href: "/admin/diagnosa",
+      href: "/admin/diagnoses",
       color: "#8b5cf6",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -51,7 +51,7 @@ export default async function AdminDashboard() {
     {
       label: "ICD-10",
       value: icd10Count,
-      href: "#",
+      href: "/admin/icd10",
       color: "#10b981",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -63,7 +63,7 @@ export default async function AdminDashboard() {
     {
       label: "ICD-9",
       value: icd9Count,
-      href: "#",
+      href: "/admin/icd9",
       color: "#f59e0b",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -117,13 +117,13 @@ export default async function AdminDashboard() {
               Pintasan untuk mengelola dan menambah data master baru ke dalam sistem.
             </p>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <Link href="/admin/tindakan" className="btn btn-primary">
+              <Link href="/admin/actions" className="btn btn-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
                 Tindakan
               </Link>
-              <Link href="/admin/diagnosa" className="btn btn-primary">
+              <Link href="/admin/diagnoses" className="btn btn-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { bpjs } from "@/db/schema";
+import { actions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { validateApiKey } from "@/lib/api-auth";
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
   }
   try {
-    const data = await db.select().from(bpjs).orderBy(bpjs.bpjsCode);
+    const data = await db.select().from(actions).orderBy(actions.cdiCode);
     return NextResponse.json({ success: true, data });
   } catch (err) {
     console.error(err);
@@ -35,32 +35,24 @@ export async function POST(req: NextRequest) {
       if (body.length === 0) return NextResponse.json({ success: true, message: "No data" });
 
       const values = body.map((item: any) => ({
-        bpjsCode: item.bpjsCode,
-        actionId: item.actionId || null,
-        diagnosisId: item.diagnosisId || null,
-        tariff: item.tariff ?? 0,
+        cdiCode: item.cdiCode,
+        name: item.name,
+        description: item.description,
         isActive: item.isActive ?? true,
       }));
 
       for (const val of values) {
-        await db.insert(bpjs).values(val).onConflictDoUpdate({
-          target: bpjs.bpjsCode,
-          set: {
-            actionId: val.actionId,
-            diagnosisId: val.diagnosisId,
-            tariff: val.tariff,
-            isActive: val.isActive,
-            updatedAt: new Date(),
-          },
+        await db.insert(actions).values(val).onConflictDoUpdate({
+          target: actions.cdiCode,
+          set: { name: val.name, description: val.description, isActive: val.isActive, updatedAt: new Date() },
         });
       }
       return NextResponse.json({ success: true, message: `${values.length} data imported successfully` });
     } else {
-      await db.insert(bpjs).values({
-        bpjsCode: body.bpjsCode,
-        actionId: body.actionId || null,
-        diagnosisId: body.diagnosisId || null,
-        tariff: body.tariff ?? 0,
+      await db.insert(actions).values({
+        cdiCode: body.cdiCode,
+        name: body.name,
+        description: body.description,
         isActive: body.isActive ?? true,
       });
       return NextResponse.json({ success: true });
@@ -74,16 +66,9 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    await db.update(bpjs)
-      .set({
-        bpjsCode: body.bpjsCode,
-        actionId: body.actionId || null,
-        diagnosisId: body.diagnosisId || null,
-        tariff: body.tariff ?? 0,
-        isActive: body.isActive,
-        updatedAt: new Date(),
-      })
-      .where(eq(bpjs.id, body.id));
+    await db.update(actions)
+      .set({ cdiCode: body.cdiCode, name: body.name, description: body.description, isActive: body.isActive, updatedAt: new Date() })
+      .where(eq(actions.id, body.id));
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -94,7 +79,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
-    await db.delete(bpjs).where(eq(bpjs.id, id));
+    await db.delete(actions).where(eq(actions.id, id));
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);

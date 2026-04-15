@@ -26,7 +26,7 @@ export const tariffs = sqliteTable("tariffs", {
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   category: text("category"),
-  class: text("class"), // Kelas 1, 2, 3, VIP, dsb.
+  class: text("class"),
   tariff: real("tariff").notNull().default(0),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
@@ -35,26 +35,28 @@ export const tariffs = sqliteTable("tariffs", {
 
 export const syncLogs = sqliteTable("sync_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  entity: text("entity").notNull(), // 'icd10', 'icd9', 'tariffs'
+  entity: text("entity").notNull(),
   lastSync: integer("last_sync", { mode: "timestamp" }).notNull(),
-  status: text("status").notNull(), // 'success', 'failed'
+  status: text("status").notNull(),
 });
 
-export const tindakan = sqliteTable("tindakan", {
+// Tabel "tindakan" (aksi/tindakan medis) — nama SQL tetap "tindakan" sesuai DB yang ada
+export const actions = sqliteTable("tindakan", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  kodeCdi: text("kode_cdi").notNull().unique(),
+  cdiCode: text("kode_cdi").notNull().unique(),
   name: text("name").notNull(),
-  penjelasan: text("penjelasan"),
+  description: text("penjelasan"),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
 
-export const diagnosa = sqliteTable("diagnosa", {
+// Tabel "diagnosa" — nama SQL tetap "diagnosa" sesuai DB yang ada
+export const diagnoses = sqliteTable("diagnosa", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  kodeCdi: text("kode_cdi").notNull().unique(),
+  cdiCode: text("kode_cdi").notNull().unique(),
   name: text("name").notNull(),
-  penjelasan: text("penjelasan"),
+  description: text("penjelasan"),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
@@ -62,9 +64,9 @@ export const diagnosa = sqliteTable("diagnosa", {
 
 export const bpjs = sqliteTable("bpjs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  kodeBpjs: text("kode_bpjs").notNull().unique(),
-  tindakanId: integer("tindakan_id").references(() => tindakan.id),
-  diagnosaId: integer("diagnosa_id").references(() => diagnosa.id),
+  bpjsCode: text("kode_bpjs").notNull().unique(),
+  actionId: integer("tindakan_id").references(() => actions.id),
+  diagnosisId: integer("diagnosa_id").references(() => diagnoses.id),
   tariff: real("tariff").notNull().default(0),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
@@ -75,7 +77,7 @@ export const apiKeys = sqliteTable("api_keys", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   key: text("key").notNull().unique(),
-  expiresAt: integer("expires_at", { mode: "timestamp" }), // Null means "Never"
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),

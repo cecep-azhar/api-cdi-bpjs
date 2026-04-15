@@ -2,25 +2,25 @@
 
 import { useEffect, useState, useRef } from "react";
 
-type Tindakan = {
+type Action = {
   id: number;
-  kodeCdi: string;
+  cdiCode: string;
   name: string;
-  penjelasan?: string;
+  description?: string;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 };
 
-const emptyForm = { kodeCdi: "", name: "", penjelasan: "", isActive: true };
+const emptyForm = { cdiCode: "", name: "", description: "", isActive: true };
 
-export default function TindakanPage() {
-  const [data, setData] = useState<Tindakan[]>([]);
-  const [filtered, setFiltered] = useState<Tindakan[]>([]);
+export default function ActionsPage() {
+  const [data, setData] = useState<Action[]>([]);
+  const [filtered, setFiltered] = useState<Action[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState<Tindakan | null>(null);
+  const [editItem, setEditItem] = useState<Action | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -29,12 +29,12 @@ export default function TindakanPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/tindakan");
+      const res = await fetch("/api/actions");
       const json = await res.json();
       if (json.success) {
         setData(json.data || []);
       } else {
-        console.error("Gagal memuat data:", json.message);
+        console.error("Failed to load data:", json.message);
         setData([]);
       }
     } catch (err) {
@@ -50,7 +50,7 @@ export default function TindakanPage() {
   useEffect(() => {
     const q = search.toLowerCase();
     setFiltered(data.filter((d) =>
-      d.kodeCdi.toLowerCase().includes(q) || d.name.toLowerCase().includes(q)
+      d.cdiCode.toLowerCase().includes(q) || d.name.toLowerCase().includes(q)
     ));
   }, [data, search]);
 
@@ -60,9 +60,9 @@ export default function TindakanPage() {
     setShowModal(true);
   };
 
-  const openEdit = (item: Tindakan) => {
+  const openEdit = (item: Action) => {
     setEditItem(item);
-    setForm({ kodeCdi: item.kodeCdi, name: item.name, penjelasan: item.penjelasan || "", isActive: item.isActive });
+    setForm({ cdiCode: item.cdiCode, name: item.name, description: item.description || "", isActive: item.isActive });
     setShowModal(true);
   };
 
@@ -71,7 +71,7 @@ export default function TindakanPage() {
     try {
       const method = editItem ? "PUT" : "POST";
       const body = editItem ? { ...form, id: editItem.id } : form;
-      const res = await fetch("/api/tindakan", {
+      const res = await fetch("/api/actions", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -81,7 +81,7 @@ export default function TindakanPage() {
         setShowModal(false);
         fetchData();
       } else {
-        alert(json.message || "Gagal menyimpan");
+        alert(json.message || "Failed to save");
       }
     } finally {
       setSaving(false);
@@ -89,8 +89,8 @@ export default function TindakanPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Yakin hapus data ini?")) return;
-    await fetch("/api/tindakan", {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+    await fetch("/api/actions", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -110,14 +110,14 @@ export default function TindakanPage() {
   };
 
   const handleExport = () => {
-    const headers = ["kode_tindakan", "nama_tindakan", "is_active"];
-    const rows = data.map(d => `${d.kodeCdi},"${d.name.replace(/"/g, '""')}",${d.isActive ? 1 : 0}`);
-    downloadCsv("tindakan_export.csv", [headers.join(","), ...rows].join("\n"));
+    const headers = ["cdi_code", "action_name", "is_active"];
+    const rows = data.map(d => `${d.cdiCode},"${d.name.replace(/"/g, '""')}",${d.isActive ? 1 : 0}`);
+    downloadCsv("actions_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
   const handleDownloadSample = () => {
-    const content = "kode_tindakan,nama_tindakan,is_active\nT001,\"Tindakan Contoh\",1\nT002,\"Suntik Vitamin\",1";
-    downloadCsv("tindakan_template.csv", content);
+    const content = "cdi_code,action_name,is_active\nT001,\"Sample Action\",1\nT002,\"Vitamin Injection\",1";
+    downloadCsv("actions_template.csv", content);
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,14 +137,14 @@ export default function TindakanPage() {
           const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
           if (cols.length >= 2) {
             payload.push({
-              kodeCdi: cols[0].replace(/^"|"$/g, "").trim(),
+              cdiCode: cols[0].replace(/^"|"$/g, "").trim(),
               name: cols[1].replace(/^"|"$/g, "").trim(),
               isActive: cols[2] ? cols[2].replace(/^"|"$/g, "").trim() === "1" : true
             });
           }
         }
 
-        const res = await fetch("/api/tindakan", {
+        const res = await fetch("/api/actions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -152,13 +152,13 @@ export default function TindakanPage() {
         const json = await res.json();
         
         if (json.success) {
-          alert(`Sukses: ${json.message}`);
+          alert(`Success: ${json.message}`);
           fetchData();
         } else {
-          alert(`Gagal: ${json.message}`);
+          alert(`Failed: ${json.message}`);
         }
       } catch (err) {
-        alert("Terjadi kesalahan saat memproses file CSV.");
+        alert("An error occurred while processing the CSV file.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -172,20 +172,20 @@ export default function TindakanPage() {
     <div className="animate-in fade-in duration-500">
       <div className="page-header">
         <div className="header-left">
-          <h1 className="page-title">Data Tindakan</h1>
-          <p className="page-desc">Kelola data master tindakan medis CDI secara terpusat</p>
+          <h1 className="page-title">Actions Data</h1>
+          <p className="page-desc">Manage CDI medical actions master data centrally</p>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Tambah Tindakan
+          Add Action
         </button>
       </div>
 
       <div className="admin-card">
         <div className="card-header">
-          <h2 className="card-title">Daftar Tindakan</h2>
+          <h2 className="card-title">Action List</h2>
           <div className="toolbar" style={{ margin: 0 }}>
             <div className="search-container" style={{ width: '300px' }}>
               <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -194,13 +194,13 @@ export default function TindakanPage() {
               <input
                 className="search-input"
                 type="text"
-                placeholder="Cari kode atau nama..."
+                placeholder="Search code or name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-secondary" onClick={handleDownloadSample} title="Unduh Template">
+              <button className="btn btn-secondary" onClick={handleDownloadSample} title="Download Template">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
@@ -222,7 +222,7 @@ export default function TindakanPage() {
 
         <div className="card-content" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Memuat data...</div>
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Loading data...</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '5rem', textAlign: 'center' }}>
               <div style={{ color: '#e2e8f0', marginBottom: '1rem' }}>
@@ -230,27 +230,27 @@ export default function TindakanPage() {
                   <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
                 </svg>
               </div>
-              <p style={{ color: '#94a3b8', fontWeight: 500 }}>Belum ada data tindakan</p>
+              <p style={{ color: '#94a3b8', fontWeight: 500 }}>No actions data yet</p>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Kode CDI</th>
-                    <th>Nama Tindakan</th>
+                    <th>CDI Code</th>
+                    <th>Action Name</th>
                     <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Aksi</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((item) => (
                     <tr key={item.id}>
-                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.kodeCdi}</td>
+                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.cdiCode}</td>
                       <td>{item.name}</td>
                       <td>
                         <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
-                          {item.isActive ? "Aktif" : "Nonaktif"}
+                          {item.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td>
@@ -261,7 +261,7 @@ export default function TindakanPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                           </button>
-                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Hapus">
+                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Delete">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <polyline points="3 6 5 6 21 6"></polyline>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -282,40 +282,40 @@ export default function TindakanPage() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              {editItem ? "Edit Tindakan" : "Tambah Tindakan Baru"}
+              {editItem ? "Edit Action" : "Add New Action"}
             </div>
             <div className="modal-body">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Kode CDI</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>CDI Code</label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: '1rem' }}
                     type="text"
-                    placeholder="Contoh: T001"
-                    value={form.kodeCdi}
-                    onChange={(e) => setForm({ ...form, kodeCdi: e.target.value })}
+                    placeholder="Example: T001"
+                    value={form.cdiCode}
+                    onChange={(e) => setForm({ ...form, cdiCode: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Nama Tindakan</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Action Name</label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: '1rem' }}
                     type="text"
-                    placeholder="Nama tindakan medis"
+                    placeholder="Medical action name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Penjelasan (Opsional)</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Description (Optional)</label>
                   <textarea
                     className="search-input"
                     style={{ padding: '0.75rem 1rem', minHeight: '80px', resize: 'vertical' }}
-                    placeholder="Penjelasan deskriptif tindakan"
-                    value={form.penjelasan}
-                    onChange={(e) => setForm({ ...form, penjelasan: e.target.value })}
+                    placeholder="Descriptive explanation of the action"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -326,16 +326,16 @@ export default function TindakanPage() {
                     value={form.isActive ? "1" : "0"}
                     onChange={(e) => setForm({ ...form, isActive: e.target.value === "1" })}
                   >
-                    <option value="1">Aktif</option>
-                    <option value="0">Nonaktif</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                   </select>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
