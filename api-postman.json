@@ -1,0 +1,158 @@
+{
+    "info": {
+        "_postman_id": "c7a8b9d0-1e2f-4a3b-8c9d-0e1f2a3b4c5d",
+        "name": "Medical Master Data API",
+        "description": "API collection for testing Tindakan, Diagnosa, and BPJS master data synchronization.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Master Data",
+            "item": [
+                {
+                    "name": "Get Tindakan",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/tindakan",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "tindakan"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Diagnosa",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/diagnosa",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "diagnosa"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get BPJS",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/bpjs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "bpjs"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Sync",
+            "item": [
+                {
+                    "name": "Post Sync Data",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"tindakan\": [\n    {\n      \"kodeCdi\": \"T001\",\n      \"name\": \"Konsultasi Dokter Umum\",\n      \"penjelasan\": \"Layanan konsultasi dasar\",\n      \"isActive\": true\n    }\n  ],\n  \"diagnosa\": [\n    {\n      \"kodeCdi\": \"D001\",\n      \"name\": \"Influenza\",\n      \"penjelasan\": \"Flu biasa\",\n      \"isActive\": true\n    }\n  ],\n  \"bpjs\": [\n    {\n      \"kodeBpjs\": \"B001\",\n      \"tariff\": 50000,\n      \"isActive\": true\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/sync/post",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sync",
+                                "post"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "apiKey",
+            "value": "YOUR_API_KEY_HERE",
+            "type": "string"
+        }
+    ]
+}

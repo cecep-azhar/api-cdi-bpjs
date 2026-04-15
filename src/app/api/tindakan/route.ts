@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { tindakan } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { validateAdminSession } from "@/lib/admin-auth";
+import { validateApiKey } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
-  if (!validateAdminSession(req)) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  // Allow either admin session or API key
+  const auth = await validateApiKey(req);
+  if (!auth.isValid && !validateAdminSession(req)) {
+    return NextResponse.json({ success: false, message: auth.message || "Unauthorized" }, { status: 401 });
   }
   try {
     const data = await db.select().from(tindakan).orderBy(tindakan.kodeCdi);
