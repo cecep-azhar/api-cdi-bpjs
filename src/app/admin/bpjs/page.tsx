@@ -2,30 +2,34 @@
 
 import { useEffect, useState, useRef } from "react";
 
-type Action = { id: number; cdiCode: string; name: string };
-type Diagnosis = { id: number; cdiCode: string; name: string };
+type Procedure = { id: number; cdiCode: string; name: string; icd9Id?: number | null };
+type Diagnosis = { id: number; cdiCode: string; name: string; icd10Id?: number | null };
+type Icd9Item = { id: number; code: string; nameId: string };
+type Icd10Item = { id: number; code: string; nameId: string };
 type BpjsItem = {
   id: number;
   bpjsCode: string;
-  actionId: number | null;
+  procedureId: number | null;
   diagnosisId: number | null;
-  tariff: number;
+  baseTariff: number;
   isActive: boolean;
 };
 
 const emptyForm = {
   bpjsCode: "",
-  actionId: "",
+  procedureId: "",
   diagnosisId: "",
-  tariff: "",
+  baseTariff: "",
   isActive: true,
 };
 
 export default function BpjsPage() {
   const [data, setData] = useState<BpjsItem[]>([]);
   const [filtered, setFiltered] = useState<BpjsItem[]>([]);
-  const [actionList, setActionList] = useState<Action[]>([]);
+  const [procedureList, setProcedureList] = useState<Procedure[]>([]);
   const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
+  const [icd9List, setIcd9List] = useState<Icd9Item[]>([]);
+  const [icd10List, setIcd10List] = useState<Icd10Item[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -37,19 +41,25 @@ export default function BpjsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [bpjsRes, actionsRes, diagnosesRes] = await Promise.all([
+      const [bpjsRes, proceduresRes, diagnosesRes, icd9Res, icd10Res] = await Promise.all([
         fetch("/api/bpjs"),
-        fetch("/api/actions"),
+        fetch("/api/procedures"),
         fetch("/api/diagnoses"),
+        fetch("/api/icd9"),
+        fetch("/api/icd10"),
       ]);
-      const [bpjsJson, actionsJson, diagnosesJson] = await Promise.all([
+      const [bpjsJson, proceduresJson, diagnosesJson, icd9Json, icd10Json] = await Promise.all([
         bpjsRes.json(),
-        actionsRes.json(),
+        proceduresRes.json(),
         diagnosesRes.json(),
+        icd9Res.json(),
+        icd10Res.json(),
       ]);
       setData(bpjsJson.success ? bpjsJson.data || [] : []);
-      setActionList(actionsJson.success ? actionsJson.data || [] : []);
+      setProcedureList(proceduresJson.success ? proceduresJson.data || [] : []);
       setDiagnosisList(diagnosesJson.success ? diagnosesJson.data || [] : []);
+      setIcd9List(icd9Json.success ? icd9Json.data || [] : []);
+      setIcd10List(icd10Json.success ? icd10Json.data || [] : []);
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
@@ -64,9 +74,9 @@ export default function BpjsPage() {
     setFiltered(data.filter((d) => d.bpjsCode.toLowerCase().includes(q)));
   }, [data, search]);
 
-  const getActionName = (id: number | null) => {
+  const getProcedureName = (id: number | null) => {
     if (!id) return "-";
-    const t = actionList.find((t) => t.id === id);
+    const t = procedureList.find((t) => t.id === id);
     return t ? `${t.cdiCode} - ${t.name}` : id;
   };
 
@@ -74,6 +84,22 @@ export default function BpjsPage() {
     if (!id) return "-";
     const d = diagnosisList.find((d) => d.id === id);
     return d ? `${d.cdiCode} - ${d.name}` : id;
+  };
+
+  const getIcd9CodeForProcedure = (procedureId: number | null) => {
+    if (!procedureId) return "-";
+    const proc = procedureList.find((p) => p.id === procedureId);
+    if (!proc || !proc.icd9Id) return "-";
+    const icd9 = icd9List.find((i) => i.id === proc.icd9Id);
+    return icd9 ? icd9.code : "-";
+  };
+
+  const getIcd10CodeForDiagnosis = (diagnosisId: number | null) => {
+    if (!diagnosisId) return "-";
+    const diag = diagnosisList.find((d) => d.id === diagnosisId);
+    if (!diag || !diag.icd10Id) return "-";
+    const icd10 = icd10List.find((i) => i.id === diag.icd10Id);
+    return icd10 ? icd10.code : "-";
   };
 
   const formatRupiah = (v: number) =>
@@ -89,9 +115,9 @@ export default function BpjsPage() {
     setEditItem(item);
     setForm({
       bpjsCode: item.bpjsCode,
-      actionId: item.actionId?.toString() || "",
+      procedureId: item.procedureId?.toString() || "",
       diagnosisId: item.diagnosisId?.toString() || "",
-      tariff: item.tariff.toString(),
+      baseTariff: item.baseTariff.toString(),
       isActive: item.isActive,
     });
     setShowModal(true);
@@ -104,9 +130,9 @@ export default function BpjsPage() {
       const body = {
         ...(editItem ? { id: editItem.id } : {}),
         bpjsCode: form.bpjsCode,
-        actionId: form.actionId ? parseInt(form.actionId) : null,
+        procedureId: form.procedureId ? parseInt(form.procedureId) : null,
         diagnosisId: form.diagnosisId ? parseInt(form.diagnosisId) : null,
-        tariff: parseFloat(form.tariff) || 0,
+        baseTariff: parseFloat(form.baseTariff) || 0,
         isActive: form.isActive,
       };
       const res = await fetch("/api/bpjs", {
@@ -148,17 +174,17 @@ export default function BpjsPage() {
   };
 
   const handleExport = () => {
-    const headers = ["bpjs_code", "action_code", "diagnosis_code", "tariff", "is_active"];
+    const headers = ["bpjs_code", "procedure_code", "diagnosis_code", "base_tariff", "is_active"];
     const rows = data.map(d => {
-      const t = actionList.find(x => x.id === d.actionId)?.cdiCode || "";
+      const t = procedureList.find(x => x.id === d.procedureId)?.cdiCode || "";
       const dg = diagnosisList.find(x => x.id === d.diagnosisId)?.cdiCode || "";
-      return `${d.bpjsCode},${t},${dg},${d.tariff},${d.isActive ? 1 : 0}`;
+      return `${d.bpjsCode},${t},${dg},${d.baseTariff},${d.isActive ? 1 : 0}`;
     });
     downloadCsv("bpjs_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
   const handleDownloadSample = () => {
-    const content = "bpjs_code,action_code,diagnosis_code,tariff,is_active\nB001,T001,D001,150000,1\nB002,T002,,50000,1\nB003,,D002,75000,1";
+    const content = "bpjs_code,procedure_code,diagnosis_code,base_tariff,is_active\nB001,P-BRN-01,D-BRN-01,1500000,1\nB002,P-NEB-01,,250000,1\nB003,,D-PNE-01,1000000,1";
     downloadCsv("bpjs_template.csv", content);
   };
 
@@ -184,14 +210,14 @@ export default function BpjsPage() {
             const tarif = parseFloat(cols[3].replace(/^"|"$/g, "").trim()) || 0;
             const isAct = cols[4] ? cols[4].replace(/^"|"$/g, "").trim() === "1" : true;
 
-            const tMatch = actionList.find(x => x.cdiCode.toLowerCase() === kT.toLowerCase());
+            const tMatch = procedureList.find(x => x.cdiCode.toLowerCase() === kT.toLowerCase());
             const dMatch = diagnosisList.find(x => x.cdiCode.toLowerCase() === kD.toLowerCase());
 
             payload.push({
               bpjsCode: kB,
-              actionId: tMatch ? tMatch.id : null,
+              procedureId: tMatch ? tMatch.id : null,
               diagnosisId: dMatch ? dMatch.id : null,
-              tariff: tarif,
+              baseTariff: tarif,
               isActive: isAct
             });
           }
@@ -226,7 +252,7 @@ export default function BpjsPage() {
       <div className="page-header">
         <div className="header-left">
           <h1 className="page-title">BPJS Mapping</h1>
-          <p className="page-desc">Manage BPJS code tariffs/mappings with medical actions & diagnoses</p>
+          <p className="page-desc">Manage BPJS code tariffs/mappings with medical procedures & diagnoses</p>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -291,8 +317,10 @@ export default function BpjsPage() {
                 <thead>
                   <tr>
                     <th>BPJS Code</th>
-                    <th>Action Ref</th>
+                    <th>Procedure Ref</th>
+                    <th>ICD-9</th>
                     <th>Diagnosis Ref</th>
+                    <th>ICD-10</th>
                     <th>Tariff</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
@@ -302,9 +330,15 @@ export default function BpjsPage() {
                   {filtered.map((item) => (
                     <tr key={item.id}>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.bpjsCode}</td>
-                      <td style={{ fontSize: '0.85rem' }}>{getActionName(item.actionId)}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{getProcedureName(item.procedureId)}</td>
+                      <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {getIcd9CodeForProcedure(item.procedureId) !== "-" ? <span style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>{getIcd9CodeForProcedure(item.procedureId)}</span> : "-"}
+                      </td>
                       <td style={{ fontSize: '0.85rem' }}>{getDiagnosisName(item.diagnosisId)}</td>
-                      <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatRupiah(item.tariff)}</td>
+                      <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {getIcd10CodeForDiagnosis(item.diagnosisId) !== "-" ? <span style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>{getIcd10CodeForDiagnosis(item.diagnosisId)}</span> : "-"}
+                      </td>
+                      <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatRupiah(item.baseTariff)}</td>
                       <td>
                         <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
                           {item.isActive ? "Active" : "Inactive"}
@@ -355,15 +389,15 @@ export default function BpjsPage() {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Action (Optional)</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Procedure (Optional)</label>
                   <select
                     className="search-input"
                     style={{ paddingLeft: '1rem', appearance: 'auto' }}
-                    value={form.actionId}
-                    onChange={(e) => setForm({ ...form, actionId: e.target.value })}
+                    value={form.procedureId}
+                    onChange={(e) => setForm({ ...form, procedureId: e.target.value })}
                   >
-                    <option value="">-- Select Action --</option>
-                    {actionList.map((t) => (
+                    <option value="">-- Select Procedure --</option>
+                    {procedureList.map((t) => (
                       <option key={t.id} value={t.id}>{t.cdiCode} - {t.name}</option>
                     ))}
                   </select>
@@ -389,8 +423,8 @@ export default function BpjsPage() {
                     style={{ paddingLeft: '1rem' }}
                     type="number"
                     placeholder="0"
-                    value={form.tariff}
-                    onChange={(e) => setForm({ ...form, tariff: e.target.value })}
+                    value={form.baseTariff}
+                    onChange={(e) => setForm({ ...form, baseTariff: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

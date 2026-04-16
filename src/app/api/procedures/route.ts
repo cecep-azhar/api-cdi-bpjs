@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { actions } from "@/db/schema";
+import { procedures } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { validateApiKey } from "@/lib/api-auth";
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
   }
   try {
-    const data = await db.select().from(actions).orderBy(actions.cdiCode);
+    const data = await db.select().from(procedures).orderBy(procedures.cdiCode);
     return NextResponse.json({ success: true, data });
   } catch (err) {
     console.error(err);
@@ -38,21 +38,23 @@ export async function POST(req: NextRequest) {
         cdiCode: item.cdiCode,
         name: item.name,
         description: item.description,
+        icd9Id: item.icd9Id || null,
         isActive: item.isActive ?? true,
       }));
 
       for (const val of values) {
-        await db.insert(actions).values(val).onConflictDoUpdate({
-          target: actions.cdiCode,
-          set: { name: val.name, description: val.description, isActive: val.isActive, updatedAt: new Date() },
+        await db.insert(procedures).values(val).onConflictDoUpdate({
+          target: procedures.cdiCode,
+          set: { name: val.name, description: val.description, icd9Id: val.icd9Id, isActive: val.isActive, updatedAt: new Date() },
         });
       }
       return NextResponse.json({ success: true, message: `${values.length} data imported successfully` });
     } else {
-      await db.insert(actions).values({
+      await db.insert(procedures).values({
         cdiCode: body.cdiCode,
         name: body.name,
         description: body.description,
+        icd9Id: body.icd9Id || null,
         isActive: body.isActive ?? true,
       });
       return NextResponse.json({ success: true });
@@ -66,9 +68,9 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    await db.update(actions)
-      .set({ cdiCode: body.cdiCode, name: body.name, description: body.description, isActive: body.isActive, updatedAt: new Date() })
-      .where(eq(actions.id, body.id));
+    await db.update(procedures)
+      .set({ cdiCode: body.cdiCode, name: body.name, description: body.description, icd9Id: body.icd9Id || null, isActive: body.isActive, updatedAt: new Date() })
+      .where(eq(procedures.id, body.id));
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -79,7 +81,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
-    await db.delete(actions).where(eq(actions.id, id));
+    await db.delete(procedures).where(eq(procedures.id, id));
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);

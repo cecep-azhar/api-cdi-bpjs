@@ -2,25 +2,28 @@
 
 import { useEffect, useState, useRef } from "react";
 
-type Action = {
+type Procedure = {
   id: number;
   cdiCode: string;
   name: string;
   description?: string;
+  icd9Id?: number | null;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 };
+type Icd9Item = { id: number; code: string; nameId: string };
 
-const emptyForm = { cdiCode: "", name: "", description: "", isActive: true };
+const emptyForm = { cdiCode: "", name: "", description: "", icd9Id: "", isActive: true };
 
-export default function ActionsPage() {
-  const [data, setData] = useState<Action[]>([]);
-  const [filtered, setFiltered] = useState<Action[]>([]);
+export default function ProceduresPage() {
+  const [data, setData] = useState<Procedure[]>([]);
+  const [icd9List, setIcd9List] = useState<Icd9Item[]>([]);
+  const [filtered, setFiltered] = useState<Procedure[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState<Action | null>(null);
+  const [editItem, setEditItem] = useState<Procedure | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -29,14 +32,18 @@ export default function ActionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/actions");
+      const [res, icd9Res] = await Promise.all([
+        fetch("/api/procedures"),
+        fetch("/api/icd9")
+      ]);
       const json = await res.json();
-      if (json.success) {
-        setData(json.data || []);
-      } else {
-        console.error("Failed to load data:", json.message);
-        setData([]);
-      }
+      const icd9Json = await icd9Res.json();
+      
+      if (json.success) setData(json.data || []);
+      else setData([]);
+
+      if (icd9Json.success) setIcd9List(icd9Json.data || []);
+      else setIcd9List([]);
     } catch (err) {
       console.error("Fetch error:", err);
       setData([]);
@@ -60,9 +67,15 @@ export default function ActionsPage() {
     setShowModal(true);
   };
 
-  const openEdit = (item: Action) => {
+  const getIcd9Code = (id: number | null | undefined) => {
+    if (!id) return "-";
+    const t = icd9List.find((t) => t.id === id);
+    return t ? t.code : id.toString();
+  };
+
+  const openEdit = (item: Procedure) => {
     setEditItem(item);
-    setForm({ cdiCode: item.cdiCode, name: item.name, description: item.description || "", isActive: item.isActive });
+    setForm({ cdiCode: item.cdiCode, name: item.name, description: item.description || "", icd9Id: item.icd9Id?.toString() || "", isActive: item.isActive });
     setShowModal(true);
   };
 
@@ -70,8 +83,12 @@ export default function ActionsPage() {
     setSaving(true);
     try {
       const method = editItem ? "PUT" : "POST";
-      const body = editItem ? { ...form, id: editItem.id } : form;
-      const res = await fetch("/api/actions", {
+      const body = {
+        ...(editItem ? { id: editItem.id } : {}),
+        ...form,
+        icd9Id: form.icd9Id ? parseInt(form.icd9Id) : null,
+      };
+      const res = await fetch("/api/procedures", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -90,7 +107,7 @@ export default function ActionsPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    await fetch("/api/actions", {
+    await fetch("/api/procedures", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -110,14 +127,14 @@ export default function ActionsPage() {
   };
 
   const handleExport = () => {
-    const headers = ["cdi_code", "action_name", "is_active"];
-    const rows = data.map(d => `${d.cdiCode},"${d.name.replace(/"/g, '""')}",${d.isActive ? 1 : 0}`);
-    downloadCsv("actions_export.csv", [headers.join(","), ...rows].join("\n"));
+    const headers = ["cdi_code", "procedure_name", "icd9_id", "is_active"];
+    const rows = data.map(d => `${d.cdiCode},"${d.name.replace(/"/g, '""')}",${d.icd9Id || ""},${d.isActive ? 1 : 0}`);
+    downloadCsv("procedures_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
   const handleDownloadSample = () => {
-    const content = "cdi_code,action_name,is_active\nT001,\"Sample Action\",1\nT002,\"Vitamin Injection\",1";
-    downloadCsv("actions_template.csv", content);
+    const content = "cdi_code,procedure_name,icd9_id,is_active\nT001,\"Sample Procedure\",null,1\nT002,\"Vitamin Injection\",null,1";
+    downloadCsv("procedures_template.csv", content);
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,12 +156,13 @@ export default function ActionsPage() {
             payload.push({
               cdiCode: cols[0].replace(/^"|"$/g, "").trim(),
               name: cols[1].replace(/^"|"$/g, "").trim(),
-              isActive: cols[2] ? cols[2].replace(/^"|"$/g, "").trim() === "1" : true
+              icd9Id: cols[2] ? parseInt(cols[2].replace(/^"|"$/g, "").trim()) || null : null,
+              isActive: cols[3] ? cols[3].replace(/^"|"$/g, "").trim() === "1" : true
             });
           }
         }
 
-        const res = await fetch("/api/actions", {
+        const res = await fetch("/api/procedures", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -172,20 +190,20 @@ export default function ActionsPage() {
     <div className="animate-in fade-in duration-500">
       <div className="page-header">
         <div className="header-left">
-          <h1 className="page-title">Actions Data</h1>
-          <p className="page-desc">Manage CDI medical actions master data centrally</p>
+          <h1 className="page-title">Procedures Data</h1>
+          <p className="page-desc">Manage CDI medical procedures master data centrally</p>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Add Action
+          Add Procedure
         </button>
       </div>
 
       <div className="admin-card">
         <div className="card-header">
-          <h2 className="card-title">Action List</h2>
+          <h2 className="card-title">Procedure List</h2>
           <div className="toolbar" style={{ margin: 0 }}>
             <div className="search-container" style={{ width: '300px' }}>
               <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -230,7 +248,7 @@ export default function ActionsPage() {
                   <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
                 </svg>
               </div>
-              <p style={{ color: '#94a3b8', fontWeight: 500 }}>No actions data yet</p>
+              <p style={{ color: '#94a3b8', fontWeight: 500 }}>No procedures data yet</p>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
@@ -238,7 +256,8 @@ export default function ActionsPage() {
                 <thead>
                   <tr>
                     <th>CDI Code</th>
-                    <th>Action Name</th>
+                    <th>Procedure Name</th>
+                    <th>ICD-9</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -248,6 +267,9 @@ export default function ActionsPage() {
                     <tr key={item.id}>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.cdiCode}</td>
                       <td>{item.name}</td>
+                      <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {item.icd9Id ? <span style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>{getIcd9Code(item.icd9Id)}</span> : "-"}
+                      </td>
                       <td>
                         <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
                           {item.isActive ? "Active" : "Inactive"}
@@ -282,7 +304,7 @@ export default function ActionsPage() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              {editItem ? "Edit Action" : "Add New Action"}
+              {editItem ? "Edit Procedure" : "Add New Procedure"}
             </div>
             <div className="modal-body">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -298,22 +320,36 @@ export default function ActionsPage() {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Action Name</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Procedure Name</label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: '1rem' }}
                     type="text"
-                    placeholder="Medical action name"
+                    placeholder="Medical procedure name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>ICD-9 ID (Optional)</label>
+                  <select
+                    className="search-input"
+                    style={{ paddingLeft: '1rem', appearance: 'auto' }}
+                    value={form.icd9Id}
+                    onChange={(e) => setForm({ ...form, icd9Id: e.target.value })}
+                  >
+                    <option value="">-- No ICD-9 Mapping --</option>
+                    {icd9List.map((t) => (
+                      <option key={t.id} value={t.id.toString()}>{t.code} - {t.nameId}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Description (Optional)</label>
                   <textarea
                     className="search-input"
                     style={{ padding: '0.75rem 1rem', minHeight: '80px', resize: 'vertical' }}
-                    placeholder="Descriptive explanation of the action"
+                    placeholder="Descriptive explanation of the procedure"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />

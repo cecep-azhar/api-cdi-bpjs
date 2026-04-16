@@ -40,34 +40,36 @@ export const syncLogs = sqliteTable("sync_logs", {
   status: text("status").notNull(),
 });
 
-// Tabel "tindakan" (aksi/tindakan medis) — nama SQL tetap "tindakan" sesuai DB yang ada
-export const actions = sqliteTable("tindakan", {
+// Tabel "procedures" (sebelumnya tindakan)
+export const procedures = sqliteTable("procedures", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  cdiCode: text("kode_cdi").notNull().unique(),
+  cdiCode: text("cdi_code").notNull().unique(),
   name: text("name").notNull(),
-  description: text("penjelasan"),
+  description: text("description"),
+  icd9Id: integer("icd9_id").references(() => icd9.id),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
 
-// Tabel "diagnosa" — nama SQL tetap "diagnosa" sesuai DB yang ada
-export const diagnoses = sqliteTable("diagnosa", {
+// Tabel "diagnoses" (sebelumnya diagnosa)
+export const diagnoses = sqliteTable("diagnoses", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  cdiCode: text("kode_cdi").notNull().unique(),
+  cdiCode: text("cdi_code").notNull().unique(),
   name: text("name").notNull(),
-  description: text("penjelasan"),
+  description: text("description"),
+  icd10Id: integer("icd10_id").references(() => icd10.id),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
 
-export const bpjs = sqliteTable("bpjs", {
+export const bpjsMappings = sqliteTable("bpjs_mappings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  bpjsCode: text("kode_bpjs").notNull().unique(),
-  actionId: integer("tindakan_id").references(() => actions.id),
-  diagnosisId: integer("diagnosa_id").references(() => diagnoses.id),
-  tariff: real("tariff").notNull().default(0),
+  bpjsCode: text("bpjs_code").notNull().unique(),
+  procedureId: integer("procedure_id").references(() => procedures.id),
+  diagnosisId: integer("diagnosis_id").references(() => diagnoses.id),
+  baseTariff: real("base_tariff").notNull().default(0),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),

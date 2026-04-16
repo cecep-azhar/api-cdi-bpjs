@@ -7,13 +7,16 @@ type Diagnosis = {
   cdiCode: string;
   name: string;
   description?: string;
+  icd10Id?: number | null;
   isActive: boolean;
 };
+type Icd10Item = { id: number; code: string; nameId: string };
 
-const emptyForm = { cdiCode: "", name: "", description: "", isActive: true };
+const emptyForm = { cdiCode: "", name: "", description: "", icd10Id: "", isActive: true };
 
 export default function DiagnosesPage() {
   const [data, setData] = useState<Diagnosis[]>([]);
+  const [icd10List, setIcd10List] = useState<Icd10Item[]>([]);
   const [filtered, setFiltered] = useState<Diagnosis[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,14 +29,18 @@ export default function DiagnosesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/diagnoses");
+      const [res, icd10Res] = await Promise.all([
+        fetch("/api/diagnoses"),
+        fetch("/api/icd10")
+      ]);
       const json = await res.json();
-      if (json.success) {
-        setData(json.data || []);
-      } else {
-        console.error("Failed to load data:", json.message);
-        setData([]);
-      }
+      const icd10Json = await icd10Res.json();
+      
+      if (json.success) setData(json.data || []);
+      else setData([]);
+
+      if (icd10Json.success) setIcd10List(icd10Json.data || []);
+      else setIcd10List([]);
     } catch (err) {
       console.error("Fetch error:", err);
       setData([]);
@@ -57,9 +64,15 @@ export default function DiagnosesPage() {
     setShowModal(true);
   };
 
+  const getIcd10Code = (id: number | null | undefined) => {
+    if (!id) return "-";
+    const t = icd10List.find((t) => t.id === id);
+    return t ? t.code : id.toString();
+  };
+
   const openEdit = (item: Diagnosis) => {
     setEditItem(item);
-    setForm({ cdiCode: item.cdiCode, name: item.name, description: item.description || "", isActive: item.isActive });
+    setForm({ cdiCode: item.cdiCode, name: item.name, description: item.description || "", icd10Id: item.icd10Id?.toString() || "", isActive: item.isActive });
     setShowModal(true);
   };
 
@@ -67,7 +80,11 @@ export default function DiagnosesPage() {
     setSaving(true);
     try {
       const method = editItem ? "PUT" : "POST";
-      const body = editItem ? { ...form, id: editItem.id } : form;
+      const body = {
+        ...(editItem ? { id: editItem.id } : {}),
+        ...form,
+        icd10Id: form.icd10Id ? parseInt(form.icd10Id) : null,
+      };
       const res = await fetch("/api/diagnoses", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -107,13 +124,13 @@ export default function DiagnosesPage() {
   };
 
   const handleExport = () => {
-    const headers = ["cdi_code", "diagnosis_name", "is_active"];
-    const rows = data.map(d => `${d.cdiCode},"${d.name.replace(/"/g, '""')}",${d.isActive ? 1 : 0}`);
+    const headers = ["cdi_code", "diagnosis_name", "icd10_id", "is_active"];
+    const rows = data.map(d => `${d.cdiCode},"${d.name.replace(/"/g, '""')}",${d.icd10Id || ""},${d.isActive ? 1 : 0}`);
     downloadCsv("diagnoses_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
   const handleDownloadSample = () => {
-    const content = "cdi_code,diagnosis_name,is_active\nD001,\"Sample Diagnosis\",1\nD002,\"Dengue Fever\",1";
+    const content = "cdi_code,diagnosis_name,icd10_id,is_active\nD001,\"Sample Diagnosis\",null,1\nD002,\"Dengue Fever\",null,1";
     downloadCsv("diagnoses_template.csv", content);
   };
 
@@ -136,7 +153,8 @@ export default function DiagnosesPage() {
             payload.push({
               cdiCode: cols[0].replace(/^"|"$/g, "").trim(),
               name: cols[1].replace(/^"|"$/g, "").trim(),
-              isActive: cols[2] ? cols[2].replace(/^"|"$/g, "").trim() === "1" : true
+              icd10Id: cols[2] ? parseInt(cols[2].replace(/^"|"$/g, "").trim()) || null : null,
+              isActive: cols[3] ? cols[3].replace(/^"|"$/g, "").trim() === "1" : true
             });
           }
         }
@@ -236,6 +254,7 @@ export default function DiagnosesPage() {
                   <tr>
                     <th>CDI Code</th>
                     <th>Diagnosis Name</th>
+                    <th>ICD-10</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -245,6 +264,9 @@ export default function DiagnosesPage() {
                     <tr key={item.id}>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.cdiCode}</td>
                       <td>{item.name}</td>
+                      <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {item.icd10Id ? <span style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>{getIcd10Code(item.icd10Id)}</span> : "-"}
+                      </td>
                       <td>
                         <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
                           {item.isActive ? "Active" : "Inactive"}
@@ -304,6 +326,20 @@ export default function DiagnosesPage() {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>ICD-10 ID (Optional)</label>
+                  <select
+                    className="search-input"
+                    style={{ paddingLeft: '1rem', appearance: 'auto' }}
+                    value={form.icd10Id}
+                    onChange={(e) => setForm({ ...form, icd10Id: e.target.value })}
+                  >
+                    <option value="">-- No ICD-10 Mapping --</option>
+                    {icd10List.map((t) => (
+                      <option key={t.id} value={t.id.toString()}>{t.code} - {t.nameId}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Description (Optional)</label>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { icd10, icd9, tariffs, actions, diagnoses, bpjs } from "@/db/schema";
+import { icd10, icd9, tariffs, procedures, diagnoses, bpjsMappings } from "@/db/schema";
 import { gt } from "drizzle-orm";
 import { validateApiKey } from "@/lib/api-auth";
 
@@ -28,16 +28,16 @@ export async function GET(req: NextRequest) {
       where: gt(tariffs.updatedAt, timestamp),
     });
 
-    const tindakanData = await db.query.actions.findMany({
-      where: gt(actions.updatedAt, timestamp),
+    const tindakanData = await db.query.procedures.findMany({
+      where: gt(procedures.updatedAt, timestamp),
     });
 
     const diagnosaData = await db.query.diagnoses.findMany({
       where: gt(diagnoses.updatedAt, timestamp),
     });
 
-    const bpjsData = await db.query.bpjs.findMany({
-      where: gt(bpjs.updatedAt, timestamp),
+    const bpjsData = await db.query.bpjsMappings.findMany({
+      where: gt(bpjsMappings.updatedAt, timestamp),
     });
 
     return NextResponse.json({
@@ -46,9 +46,9 @@ export async function GET(req: NextRequest) {
         icd10: icd10Data,
         icd9: icd9Data,
         tariffs: tariffsData,
-        tindakan: tindakanData,
-        diagnosa: diagnosaData,
-        bpjs: bpjsData,
+        procedures: tindakanData,
+        diagnoses: diagnosaData,
+        bpjsMappings: bpjsData,
       },
       serverTimestamp: Date.now(),
     });

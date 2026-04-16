@@ -2,19 +2,19 @@ import { db } from "@/db";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
-  const [tindakanCount, diagnosaCount, bpjsCount, icd10Count, icd9Count] = await Promise.all([
-    db.query.actions.findMany().then((r) => r.length),
+  const [proceduresCount, diagnosaCount, bpjsMappingsCount, icd10Count, icd9Count] = await Promise.all([
+    db.query.procedures.findMany().then((r) => r.length),
     db.query.diagnoses.findMany().then((r) => r.length),
-    db.query.bpjs.findMany().then((r) => r.length),
+    db.query.bpjsMappings.findMany().then((r) => r.length),
     db.query.icd10.findMany().then((r) => r.length),
     db.query.icd9.findMany().then((r) => r.length),
   ]);
 
   const stats = [
     {
-      label: "Tindakan",
-      value: tindakanCount,
-      href: "/admin/actions",
+      label: "Procedures",
+      value: proceduresCount,
+      href: "/admin/procedures",
       color: "#6366f1",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -25,7 +25,7 @@ export default async function AdminDashboard() {
       ),
     },
     {
-      label: "Diagnosa",
+      label: "Diagnoses",
       value: diagnosaCount,
       href: "/admin/diagnoses",
       color: "#8b5cf6",
@@ -37,8 +37,8 @@ export default async function AdminDashboard() {
       ),
     },
     {
-      label: "BPJS",
-      value: bpjsCount,
+      label: "BPJS Mappings",
+      value: bpjsMappingsCount,
       href: "/admin/bpjs",
       color: "#06b6d4",
       icon: (
@@ -117,23 +117,23 @@ export default async function AdminDashboard() {
               Pintasan untuk mengelola dan menambah data master baru ke dalam sistem.
             </p>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <Link href="/admin/actions" className="btn btn-primary">
+              <Link href="/admin/procedures" className="btn btn-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Tindakan
+                Procedures
               </Link>
               <Link href="/admin/diagnoses" className="btn btn-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Diagnosa
+                Diagnoses
               </Link>
               <Link href="/admin/bpjs" className="btn btn-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                BPJS
+                BPJS Mappings
               </Link>
             </div>
           </div>

@@ -10,7 +10,7 @@
             "name": "Master Data",
             "item": [
                 {
-                    "name": "Get Tindakan",
+                    "name": "Get Procedures",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -21,20 +21,20 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/tindakan",
+                            "raw": "{{baseUrl}}/api/procedures",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "api",
-                                "tindakan"
+                                "procedures"
                             ]
                         }
                     },
                     "response": []
                 },
                 {
-                    "name": "Get Diagnosa",
+                    "name": "Get Diagnoses",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -45,13 +45,13 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/diagnosa",
+                            "raw": "{{baseUrl}}/api/diagnoses",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "api",
-                                "diagnosa"
+                                "diagnoses"
                             ]
                         }
                     },
@@ -104,7 +104,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"tindakan\": [\n    {\n      \"kodeCdi\": \"T001\",\n      \"name\": \"Konsultasi Dokter Umum\",\n      \"penjelasan\": \"Layanan konsultasi dasar\",\n      \"isActive\": true\n    }\n  ],\n  \"diagnosa\": [\n    {\n      \"kodeCdi\": \"D001\",\n      \"name\": \"Influenza\",\n      \"penjelasan\": \"Flu biasa\",\n      \"isActive\": true\n    }\n  ],\n  \"bpjs\": [\n    {\n      \"kodeBpjs\": \"B001\",\n      \"tariff\": 50000,\n      \"isActive\": true\n    }\n  ]\n}"
+                            "raw": "{\n  \"procedures\": [\n    {\n      \"cdiCode\": \"T001\",\n      \"name\": \"Konsultasi Dokter Umum\",\n      \"description\": \"Layanan konsultasi dasar\",\n      \"isActive\": true\n    }\n  ],\n  \"diagnoses\": [\n    {\n      \"cdiCode\": \"D001\",\n      \"name\": \"Influenza\",\n      \"description\": \"Flu biasa\",\n      \"isActive\": true\n    }\n  ],\n  \"bpjsMappings\": [\n    {\n      \"bpjsCode\": \"B001\",\n      \"baseTariff\": 50000,\n      \"isActive\": true\n    }\n  ]\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/sync/post",

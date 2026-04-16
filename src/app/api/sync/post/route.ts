@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { icd10, icd9, tariffs, actions, diagnoses, bpjs } from "@/db/schema";
+import { icd10, icd9, tariffs, procedures, diagnoses, bpjsMappings } from "@/db/schema";
 import { validateApiKey } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest) {
 
     if (tindakanData && Array.isArray(tindakanData)) {
       for (const item of tindakanData) {
-        await db.insert(actions).values({
+        await db.insert(procedures).values({
           ...item,
           updatedAt: new Date(),
         }).onConflictDoUpdate({
-          target: actions.cdiCode,
+          target: procedures.cdiCode,
           set: { ...item, updatedAt: new Date() },
         });
       }
@@ -82,11 +82,11 @@ export async function POST(req: NextRequest) {
 
     if (bpjsData && Array.isArray(bpjsData)) {
       for (const item of bpjsData) {
-        await db.insert(bpjs).values({
+        await db.insert(bpjsMappings).values({
           ...item,
           updatedAt: new Date(),
         }).onConflictDoUpdate({
-          target: bpjs.bpjsCode,
+          target: bpjsMappings.bpjsCode,
           set: { ...item, updatedAt: new Date() },
         });
       }

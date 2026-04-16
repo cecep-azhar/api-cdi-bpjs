@@ -1,5 +1,6 @@
 import { db } from "@/db";
-import { icd9, icd10 } from "@/db/schema";
+import { icd9, icd10, procedures, diagnoses, bpjsMappings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // ICD-9 codes for respiratory/lung and bronchial diseases
 const icd9Data = [
@@ -150,6 +151,30 @@ const icd10Data = [
   { code: "J84.1", nameId: "Penyakit paru kronik - pneumokoniosis", nameEn: "Chronic pulmonary disease with pneumoconiosis" },
 ];
 
+const proceduresData = [
+  { cdiCode: "P-BRN-01", name: "Bronkoskopi Serat Optik", description: "Pemeriksaan saluran napas menggunakan bronkoskop fleksibel", icd9Code: "466.0" },
+  { cdiCode: "P-OXY-01", name: "Terapi Oksigen Tambahan", description: "Pemberian oksigen via nasal kanula atau masker", icd9Code: "490" },
+  { cdiCode: "P-NEB-01", name: "Nebulisasi Salbutamol", description: "Terapi uap untuk membuka saluran napas", icd9Code: "493.0" },
+  { cdiCode: "P-PUL-01", name: "Rehabilitasi Pulmonal", description: "Program latihan untuk pasien PPOK", icd9Code: "491.20" },
+  { cdiCode: "P-THOR-01", name: "Torakosentesis", description: "Pengambilan cairan dari rongga pleura", icd9Code: "511.0" }
+];
+
+const diagnosesData = [
+  { cdiCode: "D-BRN-01", name: "Bronkitis Akut Tipe A", description: "Infeksi saluran pernapasan utama (bronkus)", icd10Code: "J20.9" },
+  { cdiCode: "D-ASM-01", name: "Asma Bronkial Eksaserbasi", description: "Penyempitan saluran napas akibat alergi", icd10Code: "J45.01" },
+  { cdiCode: "D-PNE-01", name: "Pneumonia Lobi Bilateral", description: "Infeksi paru-paru berat pada kedua lobus", icd10Code: "J18.1" },
+  { cdiCode: "D-TBC-01", name: "TB Paru Aktif", description: "Infeksi Mycobacterium tuberculosis pada paru", icd10Code: "A15.0" },
+  { cdiCode: "D-PPOK-01", name: "PPOK Stadium Lanjut", description: "Penyakit paru obstruktif kronik persisten", icd10Code: "J44.9" }
+];
+
+const bpjsData = [
+  { bpjsCode: "BPJS-BRN-001", procedureCdi: "P-BRN-01", diagnosisCdi: "D-BRN-01", baseTariff: 1500000 },
+  { bpjsCode: "BPJS-ASM-001", procedureCdi: "P-NEB-01", diagnosisCdi: "D-ASM-01", baseTariff: 250000 },
+  { bpjsCode: "BPJS-PNE-001", procedureCdi: "P-OXY-01", diagnosisCdi: "D-PNE-01", baseTariff: 1000000 },
+  { bpjsCode: "BPJS-TBC-001", procedureCdi: "P-THOR-01", diagnosisCdi: "D-TBC-01", baseTariff: 2500000 },
+  { bpjsCode: "BPJS-PPOK-001", procedureCdi: "P-PUL-01", diagnosisCdi: "D-PPOK-01", baseTariff: 800000 }
+];
+
 async function seedData() {
   try {
     console.log("Seeding ICD-9 data...");
@@ -161,12 +186,7 @@ async function seedData() {
         isActive: true,
       }).onConflictDoUpdate({
         target: icd9.code,
-        set: {
-          nameId: item.nameId,
-          nameEn: item.nameEn,
-          isActive: true,
-          updatedAt: new Date(),
-        },
+        set: { nameId: item.nameId, nameEn: item.nameEn, isActive: true, updatedAt: new Date() },
       });
     }
     console.log(`✓ ICD-9 data seeded: ${icd9Data.length} records`);
@@ -180,16 +200,68 @@ async function seedData() {
         isActive: true,
       }).onConflictDoUpdate({
         target: icd10.code,
-        set: {
-          nameId: item.nameId,
-          nameEn: item.nameEn,
-          isActive: true,
-          updatedAt: new Date(),
-        },
+        set: { nameId: item.nameId, nameEn: item.nameEn, isActive: true, updatedAt: new Date() },
       });
     }
     console.log(`✓ ICD-10 data seeded: ${icd10Data.length} records`);
-    console.log("✓ All data seeded successfully");
+
+    console.log("Seeding Procedures data...");
+    for (const item of proceduresData) {
+      const relatedIcd9 = await db.query.icd9.findFirst({ where: eq(icd9.code, item.icd9Code) });
+      await db.insert(procedures).values({
+        cdiCode: item.cdiCode,
+        name: item.name,
+        description: item.description,
+        icd9Id: relatedIcd9 ? relatedIcd9.id : null,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: procedures.cdiCode,
+        set: { name: item.name, description: item.description, icd9Id: relatedIcd9 ? relatedIcd9.id : null, isActive: true, updatedAt: new Date() },
+      });
+    }
+    console.log(`✓ Procedures data seeded: ${proceduresData.length} records`);
+
+    console.log("Seeding Diagnoses data...");
+    for (const item of diagnosesData) {
+      const relatedIcd10 = await db.query.icd10.findFirst({ where: eq(icd10.code, item.icd10Code) });
+      await db.insert(diagnoses).values({
+        cdiCode: item.cdiCode,
+        name: item.name,
+        description: item.description,
+        icd10Id: relatedIcd10 ? relatedIcd10.id : null,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: diagnoses.cdiCode,
+        set: { name: item.name, description: item.description, icd10Id: relatedIcd10 ? relatedIcd10.id : null, isActive: true, updatedAt: new Date() },
+      });
+    }
+    console.log(`✓ Diagnoses data seeded: ${diagnosesData.length} records`);
+
+    console.log("Seeding BPJS Mappings data...");
+    for (const item of bpjsData) {
+      const relatedProc = await db.query.procedures.findFirst({ where: eq(procedures.cdiCode, item.procedureCdi) });
+      const relatedDiag = await db.query.diagnoses.findFirst({ where: eq(diagnoses.cdiCode, item.diagnosisCdi) });
+      
+      await db.insert(bpjsMappings).values({
+        bpjsCode: item.bpjsCode,
+        procedureId: relatedProc ? relatedProc.id : null,
+        diagnosisId: relatedDiag ? relatedDiag.id : null,
+        baseTariff: item.baseTariff,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: bpjsMappings.bpjsCode,
+        set: { 
+          procedureId: relatedProc ? relatedProc.id : null, 
+          diagnosisId: relatedDiag ? relatedDiag.id : null, 
+          baseTariff: item.baseTariff, 
+          isActive: true, 
+          updatedAt: new Date() 
+        },
+      });
+    }
+    console.log(`✓ BPJS Mappings data seeded: ${bpjsData.length} records`);
+
+    console.log("✓ All interrelated master data seeded successfully");
   } catch (error) {
     console.error("Error seeding data:", error);
   }

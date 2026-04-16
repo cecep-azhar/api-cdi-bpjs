@@ -38,13 +38,14 @@ export async function POST(req: NextRequest) {
         cdiCode: item.cdiCode,
         name: item.name,
         description: item.description,
+        icd10Id: item.icd10Id || null,
         isActive: item.isActive ?? true,
       }));
 
       for (const val of values) {
         await db.insert(diagnoses).values(val).onConflictDoUpdate({
           target: diagnoses.cdiCode,
-          set: { name: val.name, description: val.description, isActive: val.isActive, updatedAt: new Date() },
+          set: { name: val.name, description: val.description, icd10Id: val.icd10Id, isActive: val.isActive, updatedAt: new Date() },
         });
       }
       return NextResponse.json({ success: true, message: `${values.length} data imported successfully` });
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
         cdiCode: body.cdiCode,
         name: body.name,
         description: body.description,
+        icd10Id: body.icd10Id || null,
         isActive: body.isActive ?? true,
       });
       return NextResponse.json({ success: true });
@@ -67,7 +69,7 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     await db.update(diagnoses)
-      .set({ cdiCode: body.cdiCode, name: body.name, description: body.description, isActive: body.isActive, updatedAt: new Date() })
+      .set({ cdiCode: body.cdiCode, name: body.name, description: body.description, icd10Id: body.icd10Id || null, isActive: body.isActive, updatedAt: new Date() })
       .where(eq(diagnoses.id, body.id));
     return NextResponse.json({ success: true });
   } catch (err) {
