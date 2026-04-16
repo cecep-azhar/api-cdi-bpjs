@@ -1,253 +1,288 @@
-# Database Schema Documentation
-
-Dokumentasi struktur tabel yang digunakan dalam aplikasi CDI BPJS.
-
----
-
-## 1. **ICD-10** (`icd10`)
-
-Tabel untuk menyimpan klasifikasi penyakit internasional versi 10 (International Classification of Diseases).
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `code` | TEXT | NOT NULL, UNIQUE | Kode ICD-10 (contoh: A00) |
-| `name_id` | TEXT | NOT NULL | Nama diagnosis dalam bahasa Indonesia |
-| `name_en` | TEXT | NULLABLE | Nama diagnosis dalam bahasa Inggris |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Tidak ada foreign key
-**Kegunaan:** Referensi diagnosis internasional untuk coding medis
-
----
-
-## 2. **ICD-9** (`icd9`)
-
-Tabel untuk menyimpan klasifikasi penyakit internasional versi 9 (International Classification of Diseases).
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `code` | TEXT | NOT NULL, UNIQUE | Kode ICD-9 (contoh: 001.0) |
-| `name_id` | TEXT | NOT NULL | Nama diagnosis dalam bahasa Indonesia |
-| `name_en` | TEXT | NULLABLE | Nama diagnosis dalam bahasa Inggris |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Tidak ada foreign key
-**Kegunaan:** Referensi diagnosis internasional versi lama untuk compatibility
-
----
-
-## 3. **Tariffs** (`tariffs`)
-
-Tabel untuk menyimpan data daftar tarif layanan medis.
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `code` | TEXT | NOT NULL, UNIQUE | Kode tarif (contoh: TAR-001) |
-| `name` | TEXT | NOT NULL | Nama layanan/tindakan |
-| `category` | TEXT | NULLABLE | Kategori layanan (contoh: "Perawatan", "Pembedahan") |
-| `class` | TEXT | NULLABLE | Kelas layanan (contoh: "A", "B", "C") |
-| `tariff` | REAL | NOT NULL, DEFAULT: 0 | Besaran tarif dalam Rupiah |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Tidak ada foreign key
-**Kegunaan:** Master data untuk semua tarif layanan medis yang tersedia
-
----
-
-## 4. **Sync Logs** (`sync_logs`)
-
-Tabel untuk mencatat history proses sinkronisasi data.
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `entity` | TEXT | NOT NULL | Nama entitas yang disinkronisasi (contoh: "icd10", "actions") |
-| `last_sync` | TIMESTAMP | NOT NULL | Waktu sync terakhir |
-| `status` | TEXT | NOT NULL | Status sync ("success", "failed", "pending") |
-
-**Relasi:** Tidak ada foreign key
-**Kegunaan:** Audit trail untuk tracking proses sinkronisasi data eksternal
-
----
-
-## 5. **Actions / Tindakan** (`tindakan`)
-
-Tabel untuk menyimpan daftar tindakan medis CDI (Clinical Coding).
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `kode_cdi` | TEXT | NOT NULL, UNIQUE | Kode CDI tindakan (contoh: "P-CAV") |
-| `name` | TEXT | NOT NULL | Nama tindakan medis |
-| `penjelasan` | TEXT | NULLABLE | Deskripsi/penjelasan tindakan |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Referenced by `bpjs.tindakan_id` (Foreign Key)
-**Kegunaan:** Master data tindakan medis yang dapat dipetakan ke BPJS
-
----
-
-## 6. **Diagnoses / Diagnosa** (`diagnosa`)
-
-Tabel untuk menyimpan daftar diagnosis CDI (Clinical Coding).
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `kode_cdi` | TEXT | NOT NULL, UNIQUE | Kode CDI diagnosis (contoh: "K02.1") |
-| `name` | TEXT | NOT NULL | Nama diagnosis |
-| `penjelasan` | TEXT | NULLABLE | Deskripsi/penjelasan diagnosis |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Referenced by `bpjs.diagnosa_id` (Foreign Key)
-**Kegunaan:** Master data diagnosis yang dapat dipetakan ke BPJS
-
----
-
-## 7. **BPJS** (`bpjs`)
-
-Tabel untuk menyimpan pemetaan kode BPJS ke tindakan dan diagnosis medis dengan tarif.
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `kode_bpjs` | TEXT | NOT NULL, UNIQUE | Kode BPJS (contoh: "BP001") |
-| `tindakan_id` | INTEGER | NULLABLE, FK → `tindakan.id` | Referensi ke tabel Actions |
-| `diagnosa_id` | INTEGER | NULLABLE, FK → `diagnosa.id` | Referensi ke tabel Diagnoses |
-| `tariff` | REAL | NOT NULL, DEFAULT: 0 | Tarif layanan dalam Rupiah |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:**
-- ➜ `tindakan_id` references `tindakan.id`
-- ➜ `diagnosa_id` references `diagnosa.id`
-
-**Kegunaan:** Core tabel untuk mapping BPJS dengan tindakan, diagnosis, dan tarif
-
----
-
-## 8. **API Keys** (`api_keys`)
-
-Tabel untuk menyimpan API key yang digunakan untuk autentikasi API.
-
-| Field | Type | Constraints | Deskripsi |
-|-------|------|-------------|-----------|
-| `id` | INTEGER | PRIMARY KEY, AUTO INCREMENT | ID unik |
-| `name` | TEXT | NOT NULL | Nama/label API key (contoh: "Mobile App") |
-| `key` | TEXT | NOT NULL, UNIQUE | String API key yang unik |
-| `expires_at` | TIMESTAMP | NULLABLE | Waktu expiry API key |
-| `is_active` | BOOLEAN | DEFAULT: true | Status aktif/nonaktif |
-| `created_at` | TIMESTAMP | DEFAULT: NOW() | Waktu pembuatan record |
-| `updated_at` | TIMESTAMP | DEFAULT: NOW() | Waktu perubahan terakhir |
-
-**Relasi:** Tidak ada foreign key
-**Kegunaan:** Manajemen API key untuk endpoint sync dan data retrieval
-
----
+# Database Structure & Relationships
 
 ## Entity Relationship Diagram (ERD)
 
 ```
+┌─────────────────┐       ┌─────────────────┐
+│     icd10       │       │      icd9       │
+├─────────────────┤       ├─────────────────┤
+│ id (PK)         │       │ id (PK)         │
+│ code (UNIQUE)   │       │ code (UNIQUE)   │
+│ nameId          │       │ nameId          │
+│ nameEn          │       │ nameEn          │
+│ isActive        │       │ isActive        │
+│ createdAt       │       │ createdAt       │
+│ updatedAt       │       │ updatedAt       │
+└────────┬────────┘       └────────┬────────┘
+         │                          │
+         │ 1:N                      │ 1:N
+         ▼                          ▼
+┌─────────────────┐       ┌─────────────────┐
+│    diagnoses    │       │   procedures    │
+├─────────────────┤       ├─────────────────┤
+│ id (PK)         │       │ id (PK)         │
+│ cdiCode (UNIQUE)│       │ cdiCode (UNIQUE)│
+│ name            │       │ name            │
+│ description     │       │ description     │
+│ icd10Id (FK) ───┼───────┤ icd9Id (FK)     │
+│ isActive        │       │ isActive        │
+│ createdAt       │       │ createdAt       │
+│ updatedAt       │       │ updatedAt       │
+└────────┬────────┘       └────────┬────────┘
+         │                          │
+         │ 1:N                       │ 1:N
+         ▼                          ▼
+┌─────────────────────────────────────────────────┐
+│                  bpjsMappings                  │
+├─────────────────────────────────────────────────┤
+│ id (PK)                                         │
+│ bpjsCode (UNIQUE)                              │
+│ procedureId (FK) ──────────────────────────────►│
+│ diagnosisId (FK) ─────────────────────────────►│
+│ baseTariff                                      │
+│ isActive                                        │
+│ createdAt                                       │
+│ updatedAt                                       │
+└─────────────────────────────────────────────────┘
+
 ┌─────────────────┐
-│   tindakan      │
-│   (actions)     │
-├─────────────────┤
-│ id (PK)         │──┐
-│ kode_cdi        │  │
-│ name            │  │
-│ penjelasan      │  │
-│ is_active       │  │
-│ created_at      │  │
-│ updated_at      │  │
-└─────────────────┘  │
-                     │
-                     │ 1:N
-                     │
-                     ▼
-              ┌──────────────┐
-              │    bpjs      │
-              ├──────────────┤
-              │ id (PK)      │
-              │ kode_bpjs    │
-              │ tindakan_id  │ ──── FK
-              │ diagnosa_id  │ ──── FK
-              │ tariff       │
-              │ is_active    │
-              │ created_at   │
-              │ updated_at   │
-              └──────────────┘
-                     ▲
-                     │
-                     │ 1:N
-                     │
-┌─────────────────┐  │
-│   diagnosa      │──┘
-│  (diagnoses)    │
+│    api_keys     │
 ├─────────────────┤
 │ id (PK)         │
-│ kode_cdi        │
 │ name            │
-│ penjelasan      │
-│ is_active       │
-│ created_at      │
-│ updated_at      │
+│ key (UNIQUE)    │
+│ expiresAt       │
+│ isActive        │
+│ createdAt       │
+│ updatedAt       │
+└─────────────────┘
+
+┌─────────────────┐
+│    tariffs      │
+├─────────────────┤
+│ id (PK)         │
+│ code (UNIQUE)   │
+│ name            │
+│ category        │
+│ class           │
+│ tariff          │
+│ isActive        │
+│ createdAt       │
+│ updatedAt       │
+└─────────────────┘
+
+┌─────────────────┐
+│   sync_logs     │
+├─────────────────┤
+│ id (PK)         │
+│ entity          │
+│ lastSync        │
+│ status          │
 └─────────────────┘
 ```
 
 ---
 
-## Catatan Teknis
+## Table Definitions
 
-### Field Naming Convention
-- **Database columns** menggunakan `snake_case`: `is_active`, `kode_cdi`, `created_at`
-- **JavaScript/TypeScript fields** menggunakan `camelCase`: `isActive`, `cdiCode`, `createdAt`
+### 1. icd10
+International Classification of Diseases version 10.
 
-### Timestamps
-- Semua tabel memiliki `created_at` dan `updated_at`
-- Format: UNIX Timestamp (detik sejak 1970-01-01)
-- Default: Generated otomatis saat insert/update
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| code | TEXT | NOT NULL, UNIQUE | ICD-10 code (e.g., "A00", "J18.9") |
+| nameId | TEXT | NOT NULL | Disease name in Indonesian |
+| nameEn | TEXT | NULLABLE | Disease name in English |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
 
-### Boolean Fields
-- Disimpan sebagai INTEGER (0 = false, 1 = true)
-- Di JavaScript otomatis convert ke boolean
-
-### Unique Constraints
-Setiap master data memiliki unique constraint pada kode mereka:
-- `icd10.code`
-- `icd9.code`
-- `tariffs.code`
-- `tindakan.kode_cdi`
-- `diagnosa.kode_cdi`
-- `bpjs.kode_bpjs`
-- `api_keys.key`
+**Indexes:** `code` (UNIQUE)
 
 ---
 
-## Summary Tabel
+### 2. icd9
+International Classification of Diseases version 9 (Procedures).
 
-| Tabel | Jumlah FK | Kegunaan |
-|-------|-----------|----------|
-| icd10 | 0 | Master diagnosis internasional v10 |
-| icd9 | 0 | Master diagnosis internasional v9 |
-| tariffs | 0 | Master tarif layanan |
-| sync_logs | 0 | Audit trail sinkronisasi |
-| tindakan | 0 | Master tindakan medis |
-| diagnosa | 0 | Master diagnosis medis |
-| **bpjs** | 2 | **Core mapping BPJS** |
-| api_keys | 0 | Management API key |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| code | TEXT | NOT NULL, UNIQUE | ICD-9 procedure code (e.g., "001.0") |
+| nameId | TEXT | NOT NULL | Procedure name in Indonesian |
+| nameEn | TEXT | NULLABLE | Procedure name in English |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
 
-**Total Tabel: 8** | **Total FK: 2** (dalam tabel bpjs)
+**Indexes:** `code` (UNIQUE)
+
+---
+
+### 3. procedures (Tindakan)
+CDI medical procedures master data.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| cdiCode | TEXT | NOT NULL, UNIQUE | CDI internal code (e.g., "T001") |
+| name | TEXT | NOT NULL | Procedure name |
+| description | TEXT | NULLABLE | Detailed description |
+| icd9Id | INTEGER | FOREIGN KEY (icd9.id) | Reference to ICD-9 |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
+
+**Indexes:** `cdiCode` (UNIQUE)
+**Foreign Keys:** `icd9Id` → `icd9(id)`
+
+---
+
+### 4. diagnoses (Diagnosa)
+CDI medical diagnoses master data.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| cdiCode | TEXT | NOT NULL, UNIQUE | CDI internal code (e.g., "D001") |
+| name | TEXT | NOT NULL | Diagnosis name |
+| description | TEXT | NULLABLE | Detailed description |
+| icd10Id | INTEGER | FOREIGN KEY (icd10.id) | Reference to ICD-10 |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
+
+**Indexes:** `cdiCode` (UNIQUE)
+**Foreign Keys:** `icd10Id` → `icd10(id)`
+
+---
+
+### 5. bpjsMappings
+Mapping between BPJS codes and CDI procedures/diagnoses with tariffs.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| bpjsCode | TEXT | NOT NULL, UNIQUE | BPJS tariff code (e.g., "B001") |
+| procedureId | INTEGER | FOREIGN KEY (procedures.id), NULLABLE | Reference to procedure |
+| diagnosisId | INTEGER | FOREIGN KEY (diagnoses.id), NULLABLE | Reference to diagnosis |
+| baseTariff | REAL | NOT NULL, DEFAULT 0 | Base tariff amount in IDR |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
+
+**Indexes:** `bpjsCode` (UNIQUE)
+**Foreign Keys:**
+- `procedureId` → `procedures(id)`
+- `diagnosisId` → `diagnoses(id)`
+
+**Note:** Either `procedureId` OR `diagnosisId` should be set (or both).
+
+---
+
+### 6. tariffs
+Medical service tariff rates.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| code | TEXT | NOT NULL, UNIQUE | Tariff code |
+| name | TEXT | NOT NULL | Tariff name |
+| category | TEXT | NULLABLE | Category classification |
+| class | TEXT | NULLABLE | Class/grade |
+| tariff | REAL | NOT NULL, DEFAULT 0 | Tariff amount in IDR |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
+
+**Indexes:** `code` (UNIQUE)
+
+---
+
+### 7. api_keys
+API authentication keys for desktop client access.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| name | TEXT | NOT NULL | Client/Application name |
+| key | TEXT | NOT NULL, UNIQUE | API key (prefix: "cdi_") |
+| expiresAt | TIMESTAMP | NULLABLE | Expiration date (null = never) |
+| isActive | BOOLEAN | DEFAULT true | Active status |
+| createdAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Creation timestamp |
+| updatedAt | TIMESTAMP | DEFAULT strftime('%s', 'now') | Last update timestamp |
+
+**Indexes:** `key` (UNIQUE)
+
+---
+
+### 8. sync_logs
+Audit trail for data synchronization events.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique identifier |
+| entity | TEXT | NOT NULL | Entity name (icd10, icd9, etc.) |
+| lastSync | TIMESTAMP | NOT NULL | Last synchronization timestamp |
+| status | TEXT | NOT NULL | Status (success, failed, etc.) |
+
+---
+
+## Relationships Summary
+
+| Parent Table | Child Table | Relationship | FK Column |
+|-------------|-------------|---------------|-----------|
+| icd9 | procedures | 1:N | icd9Id |
+| icd10 | diagnoses | 1:N | icd10Id |
+| procedures | bpjsMappings | 1:N | procedureId |
+| diagnoses | bpjsMappings | 1:N | diagnosisId |
+
+---
+
+## Data Flow
+
+### Creating a BPJS Mapping
+```
+1. Admin creates Procedure with ICD-9 reference
+   → procedures.icd9Id → icd9.id
+
+2. Admin creates Diagnosis with ICD-10 reference
+   → diagnoses.icd10Id → icd10.id
+
+3. Admin creates BPJS Mapping
+   → bpjsMappings.procedureId → procedures.id
+   → bpjsMappings.diagnosisId → diagnoses.id
+```
+
+### Sync Process
+```
+Desktop Client                    API Server                    Database
+     │                               │                            │
+     │──── GET /api/sync/get ───────>│                            │
+     │                               │──── Query changes ───────>│
+     │                               │<─── Return changes ───────│
+     │<─── JSON data ────────────────│                            │
+     │                               │                            │
+     │──── POST /api/sync/post ─────>│                            │
+     │                               │──── Upsert data ─────────>│
+     │                               │<─── Confirm ──────────────│
+     │<─── Success ──────────────────│                            │
+```
+
+---
+
+## Key Constraints
+
+1. **Unique Codes**: All master tables (icd10, icd9, procedures, diagnoses, tariffs, bpjsMappings) have unique code fields
+2. **Active/Inactive Pattern**: All data tables support soft-delete via `isActive` boolean
+3. **Timestamp Tracking**: All tables have `createdAt` and `updatedAt` for audit purposes
+4. **Cascading Relationships**: Foreign key constraints ensure referential integrity
+5. **Soft Delete Recommendation**: When data is referenced by bpjsMappings, set `isActive=false` instead of deleting
+
+---
+
+## Version
+- Created: 2026-04-16
+- Author: Cecep Saeful Azhar Hidayat, ST
+- WhatsApp: 0852-2069-9117
+- Email: cecepazhar126@gmail.com

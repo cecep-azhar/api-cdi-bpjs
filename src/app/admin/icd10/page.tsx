@@ -10,7 +10,7 @@
  * ============================================
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 type ICD10Item = {
   id: number;
@@ -18,6 +18,30 @@ type ICD10Item = {
   nameId: string;
   nameEn?: string;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type PaginationInfo = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+};
+
+type ImportError = {
+  row: number;
+  code: string;
+  status: "error";
+  message?: string;
+};
+
+type ImportResult = {
+  success: boolean;
+  message: string;
+  summary?: { total: number; success: number; errors: number };
+  errors?: ImportError[];
 };
 
 const emptyForm = { code: "", nameId: "", nameEn: "", isActive: true };
@@ -27,39 +51,66 @@ export default function ICD10Page() {
   const [filtered, setFiltered] = useState<ICD10Item[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationInfo>({ page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false });
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<ICD10Item | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [showImportResult, setShowImportResult] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (page: number = 1, searchText: string = "") => {
     setLoading(true);
     try {
-      const res = await fetch("/api/icd10");
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "50",
+        ...(searchText ? { search: searchText } : {})
+      });
+      const res = await fetch(`/api/icd10?${params}`);
       const json = await res.json();
       if (json.success) {
         setData(json.data || []);
+        setFiltered(json.data || []);
+        if (json.pagination) {
+          setPagination(json.pagination);
+        }
+        setSelectedRows(new Set());
       } else {
         console.error("Failed to load data:", json.message);
         setData([]);
+        setFiltered([]);
       }
     } catch (err) {
       console.error("Fetch error:", err);
       setData([]);
+      setFiltered([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(1, search); }, [fetchData]);
 
   useEffect(() => {
-    const q = search.toLowerCase();
-    setFiltered(data.filter((d) =>
-      d.code.toLowerCase().includes(q) || d.nameId.toLowerCase().includes(q)
-    ));
-  }, [data, search]);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchData(1, search);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [search, fetchData]);
+
+  const handlePageChange = (newPage: number) => {
+    fetchData(newPage, search);
+  };
 
   const openAdd = () => {
     setEditItem(null);
@@ -98,7 +149,7 @@ export default function ICD10Page() {
       const json = await res.json();
       if (json.success) {
         setShowModal(false);
-        fetchData();
+        fetchData(pagination.page, search);
       } else {
         alert("Error: " + json.message);
       }
@@ -120,13 +171,61 @@ export default function ICD10Page() {
       });
       const json = await res.json();
       if (json.success) {
-        fetchData();
+        fetchData(pagination.page, search);
       } else {
-        alert("Error: " + json.message);
+        alert(json.message || "Gagal menghapus data");
       }
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.size === 0) return;
+    if (!confirm(`Hapus ${selectedRows.size} item yang dipilih?`)) return;
+
+    setLoading(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const id of selectedRows) {
+      try {
+        const res = await fetch("/api/icd10", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const json = await res.json();
+        if (json.success) successCount++;
+        else errorCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setLoading(false);
+    setShowDeleteModal(false);
+    setSelectedRows(new Set());
+    alert(`Berhasil hapus ${successCount} item${errorCount > 0 ? `, ${errorCount} gagal` : ''}`);
+    fetchData(1, search);
+  };
+
+  const toggleSelectRow = (id: number) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRows.size === filtered.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(filtered.map(d => d.id)));
     }
   };
 
@@ -141,14 +240,37 @@ export default function ICD10Page() {
     document.body.removeChild(link);
   };
 
-  const handleExport = () => {
+  const handleExportSelected = () => {
+    if (selectedRows.size === 0) {
+      alert("Pilih item yang akan di-export");
+      return;
+    }
+    const selectedData = data.filter(d => selectedRows.has(d.id));
     const headers = ["code", "name_id", "name_en", "is_active"];
-    const rows = data.map((d) => `${d.code},"${d.nameId.replace(/"/g, '""')}","${(d.nameEn || "").replace(/"/g, '""')}",${d.isActive ? 1 : 0}`);
+    const rows = selectedData.map(d =>
+      `${d.code},"${d.nameId.replace(/"/g, '""')}","${(d.nameEn || "").replace(/"/g, '""')}",${d.isActive ? 1 : 0}`
+    );
+    downloadCsv("icd10_selected_export.csv", [headers.join(","), ...rows].join("\n"));
+  };
+
+  const handleExportAll = () => {
+    const headers = ["code", "name_id", "name_en", "is_active"];
+    const rows = data.map((d) =>
+      `${d.code},"${d.nameId.replace(/"/g, '""')}","${(d.nameEn || "").replace(/"/g, '""')}",${d.isActive ? 1 : 0}`
+    );
     downloadCsv("icd10_export.csv", [headers.join(","), ...rows].join("\n"));
   };
 
+  const handleExportFiltered = () => {
+    const headers = ["code", "name_id", "name_en", "is_active"];
+    const rows = filtered.map((d) =>
+      `${d.code},"${d.nameId.replace(/"/g, '""')}","${(d.nameEn || "").replace(/"/g, '""')}",${d.isActive ? 1 : 0}`
+    );
+    downloadCsv("icd10_filtered_export.csv", [headers.join(","), ...rows].join("\n"));
+  };
+
   const handleDownloadSample = () => {
-    const content = "code,name_id,name_en,is_active\nA00,Kolera,Cholera,1\nA01,Demam Tifoid,Typhoid fever,1";
+    const content = "code,name_id,name_en,is_active\nA00,Kolera,Cholera,1\nA01,Demam Tifoid,Typhoid fever,1\nA01.0,Demam Tifoid A,Paratyphoid fever A,1";
     downloadCsv("icd10_template.csv", content);
   };
 
@@ -184,11 +306,11 @@ export default function ICD10Page() {
         });
         const json = await res.json();
 
-        if (json.success) {
-          alert(`Success: ${json.message}`);
-          fetchData();
-        } else {
-          alert(`Failed: ${json.message}`);
+        setImportResult(json);
+        setShowImportResult(true);
+
+        if (json.success || (json.summary && json.summary.errors < json.summary.total)) {
+          fetchData(1, search);
         }
       } catch (err) {
         alert("An error occurred while processing the CSV file.");
@@ -216,9 +338,44 @@ export default function ICD10Page() {
         </button>
       </div>
 
+      {showImportResult && importResult && (
+        <div style={{
+          background: importResult.success ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
+          border: `1px solid ${importResult.success ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+          borderRadius: "12px",
+          padding: "1rem",
+          marginBottom: "1rem"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+            <h3 style={{ color: importResult.success ? "#4ade80" : "#f87171", margin: 0 }}>{importResult.message}</h3>
+            <button onClick={() => setShowImportResult(false)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "1.25rem" }}>×</button>
+          </div>
+          {importResult.summary && (
+            <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+              Total: {importResult.summary.total} | Berhasil: {importResult.summary.success} | Gagal: {importResult.summary.errors}
+            </div>
+          )}
+          {importResult.errors && importResult.errors.length > 0 && (
+            <div style={{ marginTop: "0.75rem", maxHeight: "200px", overflowY: "auto" }}>
+              <div style={{ color: "#f87171", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.5rem" }}>Detail Error:</div>
+              {importResult.errors.slice(0, 10).map((err, idx) => (
+                <div key={idx} style={{ fontSize: "0.75rem", color: "#f87171", marginBottom: "0.25rem" }}>
+                  Row {err.row}: {err.code} - {err.message}
+                </div>
+              ))}
+              {importResult.errors.length > 10 && (
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.25rem" }}>
+                  ... dan {importResult.errors.length - 10} error lainnya
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="admin-card">
         <div className="card-header">
-          <h2 className="card-title">ICD-10 List</h2>
+          <h2 className="card-title">ICD-10 List ({pagination.total} total)</h2>
           <div className="toolbar" style={{ margin: 0 }}>
             <div className="search-container" style={{ width: "300px" }}>
               <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -233,14 +390,35 @@ export default function ICD10Page() {
               />
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
+              {selectedRows.size > 0 && (
+                <>
+                  <button className="btn btn-secondary" onClick={handleExportSelected} title="Export Selected">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Export ({selectedRows.size})
+                  </button>
+                  <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)} title="Delete Selected">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete ({selectedRows.size})
+                  </button>
+                </>
+              )}
               <button className="btn btn-secondary" onClick={handleDownloadSample} title="Download Template">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
               </button>
-              <button className="btn btn-secondary" onClick={handleExport} title="Export CSV">
+              <button className="btn btn-secondary" onClick={handleExportAll} title="Export All">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </button>
+              <button className="btn btn-secondary" onClick={handleExportFiltered} title="Export Filtered">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                 </svg>
               </button>
               <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImportCSV} style={{ display: "none" }} />
@@ -263,52 +441,96 @@ export default function ICD10Page() {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <p style={{ color: "#94a3b8", fontWeight: 500 }}>No ICD-10 data yet</p>
+              <p style={{ color: "#94a3b8", fontWeight: 500 }}>No ICD-10 data found</p>
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Name (ID)</th>
-                    <th>Name (EN)</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ fontWeight: 600, color: "#0f172a" }}>{item.code}</td>
-                      <td>{item.nameId}</td>
-                      <td>{item.nameEn || "-"}</td>
-                      <td>
-                        <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
-                          {item.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: "0.25rem", justifyContent: "flex-end" }}>
-                          <button className="btn-icon" onClick={() => openEdit(item)} title="Edit">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                          </button>
-                          <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Delete">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
+            <>
+              <div style={{ overflowX: "auto" }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "40px" }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.size === filtered.length && filtered.length > 0}
+                          onChange={toggleSelectAll}
+                          style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                        />
+                      </th>
+                      <th>Code</th>
+                      <th>Name (ID)</th>
+                      <th>Name (EN)</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: "right" }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((item) => (
+                      <tr key={item.id} style={{ backgroundColor: selectedRows.has(item.id) ? "rgba(99, 102, 241, 0.1)" : "transparent" }}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.has(item.id)}
+                            onChange={() => toggleSelectRow(item.id)}
+                            style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                          />
+                        </td>
+                        <td style={{ fontWeight: 600, color: "#0f172a" }}>{item.code}</td>
+                        <td>{item.nameId}</td>
+                        <td style={{ color: item.nameEn ? "#0f172a" : "#94a3b8", fontStyle: item.nameEn ? "normal" : "italic" }}>
+                          {item.nameEn || "(empty)"}
+                        </td>
+                        <td>
+                          <span className={`badge ${item.isActive ? "badge-active" : "badge-inactive"}`}>
+                            {item.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "0.25rem", justifyContent: "flex-end" }}>
+                            <button className="btn-icon" onClick={() => openEdit(item)} title="Edit">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                              </svg>
+                            </button>
+                            <button className="btn-icon danger" onClick={() => handleDelete(item.id)} title="Delete">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {pagination.totalPages > 1 && (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
+                  <button
+                    className="btn btn-secondary"
+                    disabled={pagination.page <= 1}
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    style={{ padding: "0.5rem 1rem" }}
+                  >
+                    Previous
+                  </button>
+                  <span style={{ color: "#64748b", fontSize: "0.85rem" }}>
+                    Page {pagination.page} of {pagination.totalPages} (Total: {pagination.total})
+                  </span>
+                  <button
+                    className="btn btn-secondary"
+                    disabled={!pagination.hasMore}
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    style={{ padding: "0.5rem 1rem" }}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -320,18 +542,19 @@ export default function ICD10Page() {
             <div className="modal-body">
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Code</label>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Code <span style={{ color: "#ef4444" }}>*</span></label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: "1rem" }}
                     type="text"
-                    placeholder="Example: A00"
+                    placeholder="Example: A00, A01.0, J18.9"
                     value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value })}
+                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                   />
+                  <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>Format: 1-3 huruf diikutiOpsional desimal dan digit (contoh: A00, A01.0)</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Name (Indonesia)</label>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Name (Indonesia) <span style={{ color: "#ef4444" }}>*</span></label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: "1rem" }}
@@ -342,15 +565,18 @@ export default function ICD10Page() {
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Name (English)</label>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Name (English) <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>(recommended)</span></label>
                   <input
                     className="search-input"
                     style={{ paddingLeft: "1rem" }}
                     type="text"
-                    placeholder="Diagnosis name"
+                    placeholder="Diagnosis name in English"
                     value={form.nameEn}
                     onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
                   />
+                  {!form.nameEn && (
+                    <span style={{ fontSize: "0.7rem", color: "#f59e0b" }}>Disarankan untuk mengisi nama dalam bahasa Inggris</span>
+                  )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>Status</label>
@@ -371,6 +597,23 @@ export default function ICD10Page() {
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-box" style={{ maxWidth: "400px" }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">Confirm Delete</div>
+            <div className="modal-body">
+              <p style={{ color: "#0f172a", margin: 0 }}>
+                Are you sure you want to delete <strong>{selectedRows.size}</strong> selected items? This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+              <button className="btn btn-danger" onClick={handleBulkDelete}>Delete All</button>
             </div>
           </div>
         </div>
