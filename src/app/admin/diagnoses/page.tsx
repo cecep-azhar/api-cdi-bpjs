@@ -114,11 +114,19 @@ export default function DiagnosesPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    await fetch("/api/diagnoses", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/diagnoses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.message || "Failed to delete. This diagnosis might be in use by BPJS Mappings.");
+      }
+    } catch (e) {
+      alert("Network error deleting item.");
+    }
     fetchData();
   };
 

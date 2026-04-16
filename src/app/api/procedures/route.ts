@@ -93,8 +93,12 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json();
     await db.delete(procedures).where(eq(procedures.id, id));
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    const msg = err.message || "";
+    if (msg.toLowerCase().includes("constraint") || msg.toLowerCase().includes("foreign key")) {
+      return NextResponse.json({ success: false, message: "Gagal: Data prosedur ini sudah terhubung dan sedang digunakan di Master BPJS Mappings. Silakan nonaktifkan (Inactive) saja." }, { status: 400 });
+    }
     return NextResponse.json({ success: false, message: "Failed to delete data" }, { status: 500 });
   }
 }

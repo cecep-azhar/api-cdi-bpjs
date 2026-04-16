@@ -177,6 +177,14 @@ const bpjsData = [
 
 async function seedData() {
   try {
+    console.log("Clearing existing data...");
+    await db.delete(bpjsMappings);
+    await db.delete(procedures);
+    await db.delete(diagnoses);
+    await db.delete(icd10);
+    await db.delete(icd9);
+    console.log("Existing data cleared.");
+
     console.log("Seeding ICD-9 data...");
     for (const item of icd9Data) {
       await db.insert(icd9).values({

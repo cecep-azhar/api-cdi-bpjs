@@ -164,11 +164,19 @@ export default function BpjsPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    await fetch("/api/bpjs", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/bpjs", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.message || "Failed to delete mapping.");
+      }
+    } catch (e) {
+      alert("Network error deleting item.");
+    }
     fetchData();
   };
 

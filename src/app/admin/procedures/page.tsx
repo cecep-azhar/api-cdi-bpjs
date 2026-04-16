@@ -117,11 +117,19 @@ export default function ProceduresPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    await fetch("/api/procedures", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/procedures", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.message || "Failed to delete. This procedure might be in use by BPJS Mappings.");
+      }
+    } catch (e) {
+      alert("Network error deleting item.");
+    }
     fetchData();
   };
 
