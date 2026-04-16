@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 import { useEffect, useState, useRef } from "react";
 
 type Procedure = { id: number; cdiCode: string; name: string; icd9Id?: number | null };

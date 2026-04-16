@@ -4,6 +4,16 @@ import { apiKeys } from "@/db/schema";
 import { eq, and, gt, or, isNull } from "drizzle-orm";
 
 /**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
+/**
  * Validates the API Key from the request headers (x-api-key)
  * Checks if the key exists, is active, and is not expired.
  */

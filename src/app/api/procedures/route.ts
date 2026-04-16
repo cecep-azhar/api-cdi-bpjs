@@ -4,6 +4,16 @@ import { procedures } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { validateApiKey } from "@/lib/api-auth";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 // Internal admin requests (from Next.js server itself) don't send x-api-key
 function isInternalAdminRequest(req: NextRequest): boolean {
   const apiKey = req.headers.get("x-api-key") || req.nextUrl.searchParams.get("x-api-key");

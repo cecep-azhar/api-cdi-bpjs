@@ -4,6 +4,16 @@ import { icd10, icd9, tariffs, procedures, diagnoses, bpjsMappings } from "@/db/
 import { gt } from "drizzle-orm";
 import { validateApiKey } from "@/lib/api-auth";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export async function GET(req: NextRequest) {
   try {
     // Validate API Key

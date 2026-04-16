@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export default function LogoutButton() {
   const handleLogout = async () => {
     await fetch("/api/auth", { method: "DELETE" });

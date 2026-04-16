@@ -2,6 +2,16 @@ import styles from "./page.module.css";
 import "./globals.css";
 import Link from "next/link";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export default function Home() {
   return (
     <div className="container min-h-screen flex flex-col items-center justify-center text-center">

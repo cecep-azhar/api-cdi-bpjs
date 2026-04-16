@@ -1,5 +1,15 @@
 import type { Metadata } from "next";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export const metadata: Metadata = {
   title: "Login - CDI BPJS Admin",
   description: "Halaman login admin CDI BPJS API",

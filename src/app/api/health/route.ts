@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 
-export const dynamic = "force-dynamic";
-
 /**
- * Health check endpoint for the API Hub
- * Checks server uptime and database connectivity.
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
  */
+
+export const dynamic = "force-dynamic";
 export async function GET() {
   const start = Date.now();
   let dbStatus = "offline";

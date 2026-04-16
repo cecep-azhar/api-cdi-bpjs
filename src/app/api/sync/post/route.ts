@@ -3,6 +3,16 @@ import { db } from "@/db";
 import { icd10, icd9, tariffs, procedures, diagnoses, bpjsMappings } from "@/db/schema";
 import { validateApiKey } from "@/lib/api-auth";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export async function POST(req: NextRequest) {
   try {
     // Validate API Key

@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
+ */
+
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 

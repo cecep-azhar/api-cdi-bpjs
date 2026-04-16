@@ -6,7 +6,13 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 
 /**
- * Check if the request is from an authenticated admin.
+ * ============================================
+ * CDI BPJS - Medical Data Synchronization API
+ * ============================================
+ * Author    : Cecep Saeful Azhar Hidayat, ST
+ * WhatsApp  : 0852-2069-9117
+ * Email     : cecepazhar126@gmail.com
+ * ============================================
  */
 async function isAdmin() {
   const cookieStore = await cookies();
