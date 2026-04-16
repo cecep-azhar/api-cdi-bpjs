@@ -5,7 +5,7 @@ import { db } from "@/db";
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
           <Link href={s.href} key={s.label} className="stat-card" style={{ textDecoration: "none" }}>
             <div className="stat-header">
               <div className="stat-label">Total {s.label}</div>
-              <div className="stat-icon" style={{ 
+              <div className="stat-icon" style={{
                 background: s.color + '15',
                 color: s.color,
                 padding: '10px',
@@ -186,7 +186,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
       </div>
-      
+
       <div style={{ textAlign: "center", padding: "1rem 0 3rem 0", color: "#94a3b8", fontSize: "0.8rem", fontWeight: 500 }}>
         © 2026 RND SOFTWARE ENGINEERING • PREMIUM ADMIN INTERFACE
       </div>

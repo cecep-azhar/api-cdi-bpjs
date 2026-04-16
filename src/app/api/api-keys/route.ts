@@ -10,7 +10,7 @@ import crypto from "crypto";
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     // Generate a secure random string for the API key
     const rawKey = crypto.randomBytes(32).toString("hex");
     const key = `cdi_${rawKey}`;
-    
+
     let expiresAt = null;
     if (expirationYears && expirationYears !== "forever") {
       const years = parseInt(expirationYears);
@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
       isActive: true,
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "API Key generated successfully",
       key // Return the key only once upon creation
     });

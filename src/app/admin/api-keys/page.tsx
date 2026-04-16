@@ -5,7 +5,7 @@
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -170,18 +170,18 @@ export default function ApiKeysPage() {
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <code style={{ 
-                            color: "#6366f1", 
-                            background: "#f5f3ff", 
-                            padding: "0.25rem 0.6rem", 
+                          <code style={{
+                            color: "#6366f1",
+                            background: "#f5f3ff",
+                            padding: "0.25rem 0.6rem",
                             borderRadius: "6px",
                             fontSize: '0.8rem',
                             fontWeight: 600
                           }}>
                             {visibleKeys[item.id] ? item.key : `${item.key.substring(0, 10)}...`}
                           </code>
-                          <button 
-                            className="btn-icon" 
+                          <button
+                            className="btn-icon"
                             onClick={() => toggleVisibility(item.id)}
                             title={visibleKeys[item.id] ? "Sembunyikan" : "Lihat Detail"}
                             style={{ width: "28px", height: "28px" }}
@@ -198,8 +198,8 @@ export default function ApiKeysPage() {
                               </svg>
                             )}
                           </button>
-                          <button 
-                            className="btn-icon" 
+                          <button
+                            className="btn-icon"
                             onClick={() => handleCopy(item.id, item.key)}
                             title="Salin Kunci"
                             style={{ width: "28px", height: "28px" }}
@@ -250,24 +250,24 @@ export default function ApiKeysPage() {
             <div className="modal-header">
               {newKey ? "Kunci Berhasil Dibuat" : "Generate API Key Baru"}
             </div>
-            
+
             <div className="modal-body">
               {newKey ? (
                 <div style={{ padding: "0.5rem 0" }}>
-                  <div style={{ 
-                    background: "#f0fdf4", 
-                    border: "1px dashed #22c55e", 
-                    padding: "1.5rem", 
+                  <div style={{
+                    background: "#f0fdf4",
+                    border: "1px dashed #22c55e",
+                    padding: "1.5rem",
                     borderRadius: "12px",
                     marginBottom: "1rem"
                   }}>
                     <p style={{ color: "#166534", fontSize: "0.85rem", marginBottom: "1rem", fontWeight: 500 }}>
                       ⚠️ Salin dan simpan kunci ini di tempat yang aman. Anda tidak akan bisa melihatnya lagi setelah jendela ini ditutup.
                     </p>
-                    <code style={{ 
-                      display: "block", 
-                      fontSize: "1rem", 
-                      color: "#0f172a", 
+                    <code style={{
+                      display: "block",
+                      fontSize: "1rem",
+                      color: "#0f172a",
                       wordBreak: "break-all",
                       background: "#ffffff",
                       border: '1px solid #e2e8f0',

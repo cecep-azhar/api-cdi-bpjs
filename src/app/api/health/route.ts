@@ -7,7 +7,7 @@ import { sql } from "drizzle-orm";
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const start = Date.now();
   let dbStatus = "offline";
-  
+
   try {
     // Simple raw query to check connection
     await db.run(sql`SELECT 1`);

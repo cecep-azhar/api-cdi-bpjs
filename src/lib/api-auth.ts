@@ -8,7 +8,7 @@ import { eq, and, gt, or, isNull } from "drizzle-orm";
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -20,13 +20,13 @@ import { eq, and, gt, or, isNull } from "drizzle-orm";
 export async function validateApiKey(req: NextRequest) {
   // Support either header OR URL query parameter for easiest browser testing
   const apiKey = req.headers.get("x-api-key") || req.nextUrl.searchParams.get("x-api-key");
-  
+
   if (!apiKey) {
     return { isValid: false, message: "Token tidak boleh kosong, masukkan token pada header 'x-api-key' atau sebagai parameter query '?x-api-key='" };
   }
 
   const now = new Date();
-  
+
   // Find key that matches, is active, and (no expiration OR not yet expired)
   const keyRecord = await db.query.apiKeys.findFirst({
     where: and(

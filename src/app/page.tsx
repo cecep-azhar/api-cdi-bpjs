@@ -7,7 +7,7 @@ import Link from "next/link";
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -36,7 +36,7 @@ export default function Home() {
           Medical CDI Sync Hub
         </h1>
         <p className="hero-subtitle mb-10 leading-relaxed font-light">
-          A robust, offline-first synchronization engine for ICD-9, ICD-10, and BPJS Tariffs. 
+          A robust, offline-first synchronization engine for ICD-9, ICD-10, and BPJS Tariffs.
           Seamless data parity between desktop clients and the cloud.
         </p>
 
@@ -69,7 +69,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      
+
       <footer className="footer mt-12">
         &copy; 2026 Medical Data Systems &bull; Powered by Turso & Drizzle
       </footer>

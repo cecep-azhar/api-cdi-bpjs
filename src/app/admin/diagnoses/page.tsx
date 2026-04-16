@@ -5,7 +5,7 @@
  * CDI BPJS - Medical Data Synchronization API
  * ============================================
  * Author    : Cecep Saeful Azhar Hidayat, ST
- * WhatsApp  : 0852-2069-9117
+ * WhatsApp  : 0852-2069-6117
  * Email     : cecepazhar126@gmail.com
  * ============================================
  */
@@ -45,7 +45,7 @@ export default function DiagnosesPage() {
       ]);
       const json = await res.json();
       const icd10Json = await icd10Res.json();
-      
+
       if (json.success) setData(json.data || []);
       else setData([]);
 
@@ -175,7 +175,7 @@ export default function DiagnosesPage() {
           body: JSON.stringify(payload),
         });
         const json = await res.json();
-        
+
         if (json.success) {
           alert(`Success: ${json.message}`);
           fetchData();
