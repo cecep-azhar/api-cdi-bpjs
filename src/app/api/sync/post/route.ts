@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
       icd10: icd10Data,
       icd9: icd9Data,
       tariffs: tariffsData,
-      tindakan: tindakanData,
-      diagnosa: diagnosaData,
-      bpjs: bpjsData,
+      procedures: tindakanData,
+      diagnoses: diagnosaData,
+      bpjsMappings: bpjsData,
     } = await req.json();
 
     if (icd10Data && Array.isArray(icd10Data)) {
@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
         icd10: icd10Data ? icd10Data.length : 0,
         icd9: icd9Data ? icd9Data.length : 0,
         tariffs: tariffsData ? tariffsData.length : 0,
-        tindakan: tindakanData ? tindakanData.length : 0,
-        diagnosa: diagnosaData ? diagnosaData.length : 0,
-        bpjs: bpjsData ? bpjsData.length : 0,
+        procedures: tindakanData ? tindakanData.length : 0,
+        diagnoses: diagnosaData ? diagnosaData.length : 0,
+        bpjsMappings: bpjsData ? bpjsData.length : 0,
       },
       serverTimestamp: Date.now(),
     });

@@ -25,41 +25,51 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const lastSync = searchParams.get("last_sync");
     const timestamp = lastSync ? new Date(parseInt(lastSync)) : new Date(0);
+    const types = searchParams.get("type")?.split(",").map(t => t.trim()) || [];
 
-    const icd10Data = await db.query.icd10.findMany({
-      where: gt(icd10.updatedAt, timestamp),
-    });
+    const shouldFetch = (type: string) => types.length === 0 || types.includes(type);
 
-    const icd9Data = await db.query.icd9.findMany({
-      where: gt(icd9.updatedAt, timestamp),
-    });
+    const data: any = {};
 
-    const tariffsData = await db.query.tariffs.findMany({
-      where: gt(tariffs.updatedAt, timestamp),
-    });
+    if (shouldFetch("icd10")) {
+      data.icd10 = await db.query.icd10.findMany({
+        where: gt(icd10.updatedAt, timestamp),
+      });
+    }
 
-    const tindakanData = await db.query.procedures.findMany({
-      where: gt(procedures.updatedAt, timestamp),
-    });
+    if (shouldFetch("icd9")) {
+      data.icd9 = await db.query.icd9.findMany({
+        where: gt(icd9.updatedAt, timestamp),
+      });
+    }
 
-    const diagnosaData = await db.query.diagnoses.findMany({
-      where: gt(diagnoses.updatedAt, timestamp),
-    });
+    if (shouldFetch("tariffs")) {
+      data.tariffs = await db.query.tariffs.findMany({
+        where: gt(tariffs.updatedAt, timestamp),
+      });
+    }
 
-    const bpjsData = await db.query.bpjsMappings.findMany({
-      where: gt(bpjsMappings.updatedAt, timestamp),
-    });
+    if (shouldFetch("procedures")) {
+      data.procedures = await db.query.procedures.findMany({
+        where: gt(procedures.updatedAt, timestamp),
+      });
+    }
+
+    if (shouldFetch("diagnoses")) {
+      data.diagnoses = await db.query.diagnoses.findMany({
+        where: gt(diagnoses.updatedAt, timestamp),
+      });
+    }
+
+    if (shouldFetch("bpjs") || shouldFetch("bpjsMappings")) {
+      data.bpjsMappings = await db.query.bpjsMappings.findMany({
+        where: gt(bpjsMappings.updatedAt, timestamp),
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      data: {
-        icd10: icd10Data,
-        icd9: icd9Data,
-        tariffs: tariffsData,
-        procedures: tindakanData,
-        diagnoses: diagnosaData,
-        bpjsMappings: bpjsData,
-      },
+      data,
       serverTimestamp: Date.now(),
     });
   } catch (error) {

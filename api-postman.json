@@ -1,16 +1,16 @@
 {
     "info": {
         "_postman_id": "c7a8b9d0-1e2f-4a3b-8c9d-0e1f2a3b4c5d",
-        "name": "Medical Master Data API",
-        "description": "API collection for testing Tindakan, Diagnosa, and BPJS master data synchronization.",
+        "name": "CDI BPJS - Medical Master Data API",
+        "description": "API collection untuk Sinkronisasi Master Data Tindakan (Procedures), Diagnosa (Diagnoses), dan BPJS Mappings. Author: Cecep Saeful Azhar Hidayat, ST",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Master Data",
+            "name": "🔄 Sync",
             "item": [
                 {
-                    "name": "Get Procedures",
+                    "name": "GET Sync Delta (Pull dari Cloud)",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -21,73 +21,28 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/procedures",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "procedures"
+                            "raw": "{{baseUrl}}/api/sync/get?last_sync=0&type=procedures,diagnoses,bpjs",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "sync", "get"],
+                            "query": [
+                                {
+                                    "key": "last_sync",
+                                    "value": "0",
+                                    "description": "Unix timestamp (ms). Gunakan 0 untuk ambil semua data."
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "procedures,diagnoses,bpjs",
+                                    "description": "Filter data: procedures, diagnoses, bpjs, icd10, icd9, tariffs. Pisahkan dengan koma."
+                                }
                             ]
-                        }
+                        },
+                        "description": "Ambil data master yang berubah sejak `last_sync`. Gunakan parameter `type` untuk memfilter entitas tertentu (misal: procedures, diagnoses, bpjsMappings)."
                     },
                     "response": []
                 },
                 {
-                    "name": "Get Diagnoses",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "x-api-key",
-                                "value": "{{apiKey}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/diagnoses",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "diagnoses"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get BPJS",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "x-api-key",
-                                "value": "{{apiKey}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/bpjs",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "bpjs"
-                            ]
-                        }
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
-            "name": "Sync",
-            "item": [
-                {
-                    "name": "Post Sync Data",
+                    "name": "POST Sync (Push ke Cloud)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -104,18 +59,519 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"procedures\": [\n    {\n      \"cdiCode\": \"T001\",\n      \"name\": \"Konsultasi Dokter Umum\",\n      \"description\": \"Layanan konsultasi dasar\",\n      \"isActive\": true\n    }\n  ],\n  \"diagnoses\": [\n    {\n      \"cdiCode\": \"D001\",\n      \"name\": \"Influenza\",\n      \"description\": \"Flu biasa\",\n      \"isActive\": true\n    }\n  ],\n  \"bpjsMappings\": [\n    {\n      \"bpjsCode\": \"B001\",\n      \"baseTariff\": 50000,\n      \"isActive\": true\n    }\n  ]\n}"
+                            "raw": "{\n  \"procedures\": [\n    {\n      \"cdiCode\": \"P001\",\n      \"name\": \"Konsultasi Dokter Umum\",\n      \"description\": \"Layanan konsultasi dasar\",\n      \"isActive\": true\n    }\n  ],\n  \"diagnoses\": [\n    {\n      \"cdiCode\": \"D001\",\n      \"name\": \"Influenza\",\n      \"description\": \"Flu biasa\",\n      \"isActive\": true\n    }\n  ],\n  \"bpjsMappings\": [\n    {\n      \"bpjsCode\": \"B001\",\n      \"baseTariff\": 50000,\n      \"isActive\": true\n    }\n  ],\n  \"icd10\": [],\n  \"icd9\": [],\n  \"tariffs\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/sync/post",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "sync",
-                                "post"
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "sync", "post"]
+                        },
+                        "description": "Push data dari desktop ke cloud. Field: procedures, diagnoses, bpjsMappings, icd10, icd9, tariffs."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🏥 Tindakan (Procedures)",
+            "item": [
+                {
+                    "name": "GET - List Semua Tindakan",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/procedures?page=1&limit=50",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "procedures"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Cari berdasarkan kode atau nama",
+                                    "disabled": true
+                                }
                             ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST - Tambah/Update Tindakan",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text",
+                                "disabled": true,
+                                "description": "Tidak diperlukan dari admin dashboard internal"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"cdiCode\": \"P001\",\n  \"name\": \"Konsultasi Dokter Umum\",\n  \"description\": \"Layanan konsultasi dan pemeriksaan umum\",\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/procedures",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "procedures"]
+                        },
+                        "description": "Tambah satu tindakan. Kode harus diawali 'P', contoh: P001, P-001."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST - Bulk Import Tindakan",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "[\n  {\n    \"cdiCode\": \"P001\",\n    \"name\": \"Konsultasi Dokter Umum\",\n    \"description\": \"Layanan konsultasi dasar\",\n    \"isActive\": true\n  },\n  {\n    \"cdiCode\": \"P002\",\n    \"name\": \"Pemeriksaan Darah Lengkap\",\n    \"description\": \"Cek hematologi rutin\",\n    \"isActive\": true\n  }\n]",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/procedures",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "procedures"]
+                        },
+                        "description": "Import banyak tindakan sekaligus (array). Pakai ini untuk CSV import."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT - Update Tindakan",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1,\n  \"cdiCode\": \"P001\",\n  \"name\": \"Konsultasi Dokter Umum (Updated)\",\n  \"description\": \"Deskripsi diperbarui\",\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/procedures",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "procedures"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE - Hapus Tindakan",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/procedures",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "procedures"]
+                        },
+                        "description": "Hapus tindakan berdasarkan ID. Akan gagal jika masih dipakai di BPJS Mappings."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🩺 Diagnosa (Diagnoses)",
+            "item": [
+                {
+                    "name": "GET - List Semua Diagnosa",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/diagnoses?page=1&limit=50",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "diagnoses"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST - Tambah/Update Diagnosa",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"cdiCode\": \"D001\",\n  \"name\": \"Influenza\",\n  \"description\": \"Infeksi virus influenza\",\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/diagnoses",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "diagnoses"]
+                        },
+                        "description": "Tambah satu diagnosa. Kode harus diawali 'D'."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT - Update Diagnosa",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1,\n  \"cdiCode\": \"D001\",\n  \"name\": \"Influenza (Updated)\",\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/diagnoses",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "diagnoses"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE - Hapus Diagnosa",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/diagnoses",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "diagnoses"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "💊 BPJS Mappings",
+            "item": [
+                {
+                    "name": "GET - List Semua BPJS",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-api-key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/bpjs?page=1&limit=50",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "bpjs"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST - Tambah/Update BPJS",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"bpjsCode\": \"B001\",\n  \"procedureId\": null,\n  \"diagnosisId\": null,\n  \"baseTariff\": 50000,\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/bpjs",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "bpjs"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT - Update BPJS",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1,\n  \"bpjsCode\": \"B001\",\n  \"baseTariff\": 75000,\n  \"isActive\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/bpjs",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "bpjs"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE - Hapus BPJS",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/bpjs",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "bpjs"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🔑 API Keys",
+            "item": [
+                {
+                    "name": "GET - List API Keys",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/api-keys",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "api-keys"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST - Buat API Key Baru",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Glescope Desktop - Cabang Bandung\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/api-keys",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "api-keys"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE - Hapus API Key",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/api-keys",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "api-keys"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "❤️ Health Check",
+            "item": [
+                {
+                    "name": "GET - Server Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/health",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "health"]
                         }
                     },
                     "response": []
@@ -128,18 +584,14 @@
             "listen": "prerequest",
             "script": {
                 "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
+                "exec": [""]
             }
         },
         {
             "listen": "test",
             "script": {
                 "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
+                "exec": [""]
             }
         }
     ],
@@ -147,12 +599,14 @@
         {
             "key": "baseUrl",
             "value": "http://localhost:3000",
-            "type": "string"
+            "type": "string",
+            "description": "Ganti dengan URL production jika sudah deploy"
         },
         {
             "key": "apiKey",
             "value": "YOUR_API_KEY_HERE",
-            "type": "string"
+            "type": "string",
+            "description": "Ambil dari Admin Dashboard > API Keys"
         }
     ]
 }
